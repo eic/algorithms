@@ -12,13 +12,13 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -34,7 +34,7 @@
 // Event Model related classes
 #include "eicd/CalorimeterHitCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -45,29 +45,29 @@ namespace Jug::Reco {
  *
  *  \ingroup reco
  */
-class CalorimeterHitsMerger : public GaudiAlgorithm {
+class CalorimeterHitsMerger : public JugAlgorithm {
 private:
-  Gaudi::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
-  Gaudi::Property<std::string> m_readout{this, "readoutClass", ""};
+  Jug::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
+  Jug::Property<std::string> m_readout{this, "readoutClass", ""};
   // field names to generate id mask, the hits will be grouped by masking the field
-  Gaudi::Property<std::vector<std::string>> u_fields{this, "fields", {"layer"}};
+  Jug::Property<std::vector<std::string>> u_fields{this, "fields", {"layer"}};
   // reference field numbers to locate position for each merged hits group
-  Gaudi::Property<std::vector<int>> u_refs{this, "fieldRefNumbers", {}};
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
+  Jug::Property<std::vector<int>> u_refs{this, "fieldRefNumbers", {}};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer,
                                                                   this};
 
   SmartIF<IGeoSvc> m_geoSvc;
   uint64_t id_mask{0}, ref_mask{0};
 
 public:
-  CalorimeterHitsMerger(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  CalorimeterHitsMerger(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputHitCollection", m_outputHitCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -191,7 +191,5 @@ public:
 
 }; // class CalorimeterHitsMerger
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(CalorimeterHitsMerger)
 
 } // namespace Jug::Reco

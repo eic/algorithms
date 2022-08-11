@@ -10,11 +10,11 @@
 
 #include <fmt/format.h>
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -29,28 +29,28 @@
 
 namespace Jug::Fast {
 
-class MatchClusters : public GaudiAlgorithm {
+class MatchClusters : public JugAlgorithm {
 private:
   // input data
-  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Gaudi::DataHandle::Reader, this};
+  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Jug::DataHandle::Reader, this};
   DataHandle<eicd::ReconstructedParticleCollection> m_inputParticles{"ReconstructedChargedParticles",
-                                                                    Gaudi::DataHandle::Reader, this};
+                                                                    Jug::DataHandle::Reader, this};
   DataHandle<eicd::MCRecoParticleAssociationCollection> m_inputParticlesAssoc{"ReconstructedChargedParticlesAssoc",
-                                                                    Gaudi::DataHandle::Reader, this};
-  Gaudi::Property<std::vector<std::string>> m_inputClusters{this, "inputClusters", {}, "Clusters to be aggregated"};
-  Gaudi::Property<std::vector<std::string>> m_inputClustersAssoc{this, "inputClustersAssoc", {}, "Cluster associations to be aggregated"};
+                                                                    Jug::DataHandle::Reader, this};
+  Jug::Property<std::vector<std::string>> m_inputClusters{this, "inputClusters", {}, "Clusters to be aggregated"};
+  Jug::Property<std::vector<std::string>> m_inputClustersAssoc{this, "inputClustersAssoc", {}, "Cluster associations to be aggregated"};
   std::vector<DataHandle<eicd::ClusterCollection>*> m_inputClustersCollections;
   std::vector<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>*> m_inputClustersAssocCollections;
 
   // output data
   DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"ReconstructedParticles",
-                                                                     Gaudi::DataHandle::Writer, this};
+                                                                     Jug::DataHandle::Writer, this};
   DataHandle<eicd::MCRecoParticleAssociationCollection> m_outputParticlesAssoc{"ReconstructedParticlesAssoc",
-                                                                     Gaudi::DataHandle::Writer, this};
+                                                                     Jug::DataHandle::Writer, this};
 
 public:
   MatchClusters(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputMCParticles", m_inputMCParticles, "MCParticles");
     declareProperty("inputParticles", m_inputParticles, "ReconstructedChargedParticles");
     declareProperty("inputParticlesAssoc", m_inputParticlesAssoc, "ReconstructedChargedParticlesAssoc");
@@ -59,7 +59,7 @@ public:
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_inputClustersCollections = getClusterCollections(m_inputClusters);
@@ -187,7 +187,7 @@ private:
     std::vector<DataHandle<eicd::ClusterCollection>*> ret;
     for (const auto& colname : cols) {
       debug() << "initializing cluster collection: " << colname << endmsg;
-      ret.push_back(new DataHandle<eicd::ClusterCollection>{colname, Gaudi::DataHandle::Reader, this});
+      ret.push_back(new DataHandle<eicd::ClusterCollection>{colname, Jug::DataHandle::Reader, this});
     }
     return ret;
   }
@@ -196,7 +196,7 @@ private:
     std::vector<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>*> ret;
     for (const auto& colname : cols) {
       debug() << "initializing cluster association collection: " << colname << endmsg;
-      ret.push_back(new DataHandle<eicd::MCRecoClusterParticleAssociationCollection>{colname, Gaudi::DataHandle::Reader, this});
+      ret.push_back(new DataHandle<eicd::MCRecoClusterParticleAssociationCollection>{colname, Jug::DataHandle::Reader, this});
     }
     return ret;
   }
@@ -283,7 +283,5 @@ private:
   }
 }; // namespace Jug::Fast
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(MatchClusters)
 
 } // namespace Jug::Fast

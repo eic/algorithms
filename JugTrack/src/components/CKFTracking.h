@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -36,7 +36,7 @@ namespace Jug::Reco {
  *
  * \ingroup tracking
  */
-class CKFTracking : public GaudiAlgorithm {
+class CKFTracking : public JugAlgorithm {
 public:
   /// Track finder function that takes input measurements, initial trackstate
   /// and track finder options and returns some track-finder-specific result.
@@ -61,15 +61,15 @@ public:
     std::shared_ptr<const Acts::MagneticFieldProvider> magneticField);
 
 public:
-  DataHandle<IndexSourceLinkContainer> m_inputSourceLinks{"inputSourceLinks", Gaudi::DataHandle::Reader, this};
-  DataHandle<MeasurementContainer> m_inputMeasurements{"inputMeasurements", Gaudi::DataHandle::Reader, this};
+  DataHandle<IndexSourceLinkContainer> m_inputSourceLinks{"inputSourceLinks", Jug::DataHandle::Reader, this};
+  DataHandle<MeasurementContainer> m_inputMeasurements{"inputMeasurements", Jug::DataHandle::Reader, this};
   DataHandle<TrackParametersContainer> m_inputInitialTrackParameters{"inputInitialTrackParameters",
-                                                                     Gaudi::DataHandle::Reader, this};
-  DataHandle<TrajectoriesContainer> m_outputTrajectories{"outputTrajectories", Gaudi::DataHandle::Writer, this};
+                                                                     Jug::DataHandle::Reader, this};
+  DataHandle<TrajectoriesContainer> m_outputTrajectories{"outputTrajectories", Jug::DataHandle::Writer, this};
 
-  Gaudi::Property<std::vector<double>> m_etaBins{this, "etaBins", {}};
-  Gaudi::Property<std::vector<double>> m_chi2CutOff{this, "chi2CutOff", {15.}};
-  Gaudi::Property<std::vector<size_t>> m_numMeasurementsCutOff{this, "numMeasurementsCutOff", {10}};
+  Jug::Property<std::vector<double>> m_etaBins{this, "etaBins", {}};
+  Jug::Property<std::vector<double>> m_chi2CutOff{this, "chi2CutOff", {15.}};
+  Jug::Property<std::vector<size_t>> m_numMeasurementsCutOff{this, "numMeasurementsCutOff", {10}};
 
   std::shared_ptr<CKFTrackingFunction> m_trackFinderFunc;
   SmartIF<IGeoSvc> m_geoSvc;

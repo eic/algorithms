@@ -17,13 +17,13 @@
 
 #include "fmt/format.h"
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -40,7 +40,7 @@
 #include "eicd/Vector3f.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace {
 
@@ -112,23 +112,23 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class CalorimeterIslandCluster : public GaudiAlgorithm {
+class CalorimeterIslandCluster : public JugAlgorithm {
 private:
-  Gaudi::Property<bool> m_splitCluster{this, "splitCluster", true};
-  Gaudi::Property<double> m_minClusterHitEdep{this, "minClusterHitEdep", 0.};
-  Gaudi::Property<double> m_minClusterCenterEdep{this, "minClusterCenterEdep", 50.0 * MeV};
-  DataHandle<CaloHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
+  Jug::Property<bool> m_splitCluster{this, "splitCluster", true};
+  Jug::Property<double> m_minClusterHitEdep{this, "minClusterHitEdep", 0.};
+  Jug::Property<double> m_minClusterCenterEdep{this, "minClusterCenterEdep", 50.0 * MeV};
+  DataHandle<CaloHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
   DataHandle<eicd::ProtoClusterCollection> m_outputProtoCollection{"outputProtoClusterCollection",
-                                                                  Gaudi::DataHandle::Writer, this};
+                                                                  Jug::DataHandle::Writer, this};
 
   // neighbour checking distances
-  Gaudi::Property<double> m_sectorDist{this, "sectorDist", 5.0 * cm};
-  Gaudi::Property<std::vector<double>> u_localDistXY{this, "localDistXY", {}};
-  Gaudi::Property<std::vector<double>> u_localDistXZ{this, "localDistXZ", {}};
-  Gaudi::Property<std::vector<double>> u_localDistYZ{this, "localDistYZ", {}};
-  Gaudi::Property<std::vector<double>> u_globalDistRPhi{this, "globalDistRPhi", {}};
-  Gaudi::Property<std::vector<double>> u_globalDistEtaPhi{this, "globalDistEtaPhi", {}};
-  Gaudi::Property<std::vector<double>> u_dimScaledLocalDistXY{this, "dimScaledLocalDistXY", {1.8, 1.8}};
+  Jug::Property<double> m_sectorDist{this, "sectorDist", 5.0 * cm};
+  Jug::Property<std::vector<double>> u_localDistXY{this, "localDistXY", {}};
+  Jug::Property<std::vector<double>> u_localDistXZ{this, "localDistXZ", {}};
+  Jug::Property<std::vector<double>> u_localDistYZ{this, "localDistYZ", {}};
+  Jug::Property<std::vector<double>> u_globalDistRPhi{this, "globalDistRPhi", {}};
+  Jug::Property<std::vector<double>> u_globalDistEtaPhi{this, "globalDistEtaPhi", {}};
+  Jug::Property<std::vector<double>> u_dimScaledLocalDistXY{this, "dimScaledLocalDistXY", {1.8, 1.8}};
   // neighbor checking function
   std::function<eicd::Vector2f(const CaloHit&, const CaloHit&)> hitsDist;
 
@@ -137,13 +137,13 @@ private:
   std::array<double, 2> neighbourDist = {0., 0.};
 
 public:
-  CalorimeterIslandCluster(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  CalorimeterIslandCluster(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputProtoClusterCollection", m_outputProtoCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -153,7 +153,7 @@ public:
     sectorDist           = m_sectorDist.value() / mm;
 
     // set coordinate system
-    auto set_dist_method = [this](const Gaudi::Property<std::vector<double>>& uprop) {
+    auto set_dist_method = [this](const Jug::Property<std::vector<double>>& uprop) {
       if (uprop.size() == 0) {
         return false;
       }
@@ -175,7 +175,7 @@ public:
       return true;
     };
 
-    std::vector<Gaudi::Property<std::vector<double>>> uprops{
+    std::vector<Jug::Property<std::vector<double>>> uprops{
         u_localDistXY,
         u_localDistXZ,
         u_localDistYZ,
@@ -408,7 +408,5 @@ private:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(CalorimeterIslandCluster)
 
 } // namespace Jug::Reco

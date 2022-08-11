@@ -5,11 +5,7 @@
 # Package: JugDigi
 ################################################################################
 
-#file(GLOB JugDigiPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
-set(JugDigiPlugins_sources
-  src/components/CalorimeterHitDigi.cpp
-)
-message(STATUS "${JugDigiPlugins_sources}")
+file(GLOB JugDigiPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
 add_library(JugDigiPlugins ${JugDigiPlugins_sources})
 target_link_libraries(JugDigiPlugins
   ROOT::Core ROOT::RIO ROOT::Tree

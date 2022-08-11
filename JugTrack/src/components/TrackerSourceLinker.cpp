@@ -3,13 +3,13 @@
 
 #include "JugTrack/GeometryContainers.hpp"
 
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -42,17 +42,17 @@ namespace Jug::Reco {
  *
  * \ingroup tracking
  */
-class TrackerSourceLinker : public GaudiAlgorithm {
+class TrackerSourceLinker : public JugAlgorithm {
 private:
-  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<std::list<IndexSourceLink>> m_sourceLinkStorage{"sourceLinkStorage", Gaudi::DataHandle::Writer, this};
-  DataHandle<IndexSourceLinkContainer> m_outputSourceLinks{"outputSourceLinks", Gaudi::DataHandle::Writer, this};
-  DataHandle<MeasurementContainer> m_outputMeasurements{"outputMeasurements", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+  DataHandle<std::list<IndexSourceLink>> m_sourceLinkStorage{"sourceLinkStorage", Jug::DataHandle::Writer, this};
+  DataHandle<IndexSourceLinkContainer> m_outputSourceLinks{"outputSourceLinks", Jug::DataHandle::Writer, this};
+  DataHandle<MeasurementContainer> m_outputMeasurements{"outputMeasurements", Jug::DataHandle::Writer, this};
   /// Pointer to the geometry service
   SmartIF<IGeoSvc> m_geoSvc;
 
 public:
-  TrackerSourceLinker(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  TrackerSourceLinker(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("sourceLinkStorage", m_sourceLinkStorage, "");
     declareProperty("outputSourceLinks", m_outputSourceLinks, "");
@@ -60,7 +60,7 @@ public:
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_geoSvc = service("GeoSvc");
@@ -157,7 +157,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(TrackerSourceLinker)
 
 } // namespace Jug::Reco

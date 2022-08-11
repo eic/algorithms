@@ -6,11 +6,8 @@
 ################################################################################
 
 file(GLOB JugPIDPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
-gaudi_add_module(JugPIDPlugins
-  SOURCES
-  ${JugPIDPlugins_sources}
-  LINK
-  Gaudi::GaudiAlgLib Gaudi::GaudiKernel
+add_library(JugPIDPlugins ${JugPIDPlugins_sources})
+target_link_libraries(JugPIDPlugins
   JugBase
   ROOT::Core ROOT::RIO ROOT::Tree
   EDM4HEP::edm4hep
@@ -18,6 +15,7 @@ gaudi_add_module(JugPIDPlugins
 )
 
 target_include_directories(JugPIDPlugins PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/JugBase>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 

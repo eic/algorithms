@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2022 Sylvester Joosten, Whitney Armstrong
 
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -21,16 +21,16 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class ParticleCollector : public GaudiAlgorithm {
+class ParticleCollector : public JugAlgorithm {
 private:
-  Gaudi::Property<std::vector<std::string>> m_inputParticles{this, "inputParticles", {}, "Particles to be aggregated"};
-  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Gaudi::DataHandle::Writer,
+  Jug::Property<std::vector<std::string>> m_inputParticles{this, "inputParticles", {}, "Particles to be aggregated"};
+  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Jug::DataHandle::Writer,
                                                                      this};
 
   std::vector<DataHandle<eicd::ReconstructedParticleCollection>*> m_particleCollections;
 
 public:
-  ParticleCollector(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ParticleCollector(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("outputParticles", m_outputParticles, "output particles combined into single collection");
   }
   ~ParticleCollector() {
@@ -40,13 +40,13 @@ public:
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     for (auto colname : m_inputParticles) {
       debug() << "initializing collection: " << colname << endmsg;
       m_particleCollections.push_back(
-          new DataHandle<eicd::ReconstructedParticleCollection>{colname, Gaudi::DataHandle::Reader, this});
+          new DataHandle<eicd::ReconstructedParticleCollection>{colname, Jug::DataHandle::Reader, this});
     }
     return StatusCode::SUCCESS;
   }
@@ -69,7 +69,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ParticleCollector)
 
 } // namespace Jug::Reco

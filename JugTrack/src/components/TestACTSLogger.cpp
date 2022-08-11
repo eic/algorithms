@@ -11,16 +11,14 @@
 
 using namespace Acts;
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(TestACTSLogger)
 
 TestACTSLogger::TestACTSLogger(const std::string& aName, ISvcLocator* aSvcLoc)
-    : GaudiAlgorithm(aName, aSvcLoc) {}
+    : JugAlgorithm(aName, aSvcLoc) {}
 
 TestACTSLogger::~TestACTSLogger() = default;
 
 StatusCode TestACTSLogger::initialize() {
-  if (GaudiAlgorithm::initialize().isFailure()) {
+  if (JugAlgorithm::initialize().isFailure()) {
     return StatusCode::FAILURE;
   }
   {
@@ -49,4 +47,4 @@ StatusCode TestACTSLogger::initialize() {
 StatusCode TestACTSLogger::execute() { 
   return StatusCode::SUCCESS; }
 
-StatusCode TestACTSLogger::finalize() { return GaudiAlgorithm::finalize(); }
+StatusCode TestACTSLogger::finalize() { return JugAlgorithm::finalize(); }

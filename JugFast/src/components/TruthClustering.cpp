@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -26,7 +26,7 @@
 #include "eicd/ProtoClusterCollection.h"
 #include "eicd/RawCalorimeterHitCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Fast {
 
@@ -34,22 +34,22 @@ namespace Jug::Fast {
  *
  * \ingroup reco
  */
-class TruthClustering : public GaudiAlgorithm {
+class TruthClustering : public JugAlgorithm {
 private:
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHits{"inputHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<edm4hep::SimCalorimeterHitCollection> m_mcHits{"mcHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ProtoClusterCollection> m_outputProtoClusters{"outputProtoClusters", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHits{"inputHits", Jug::DataHandle::Reader, this};
+  DataHandle<edm4hep::SimCalorimeterHitCollection> m_mcHits{"mcHits", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ProtoClusterCollection> m_outputProtoClusters{"outputProtoClusters", Jug::DataHandle::Writer, this};
 
 public:
   TruthClustering(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHits", m_inputHits, "Input calorimeter reco hits");
     declareProperty("mcHits", m_mcHits, "Input truth hits");
     declareProperty("outputProtoClusters", m_outputProtoClusters, "Output proto clusters");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     return StatusCode::SUCCESS;
@@ -82,7 +82,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(TruthClustering)
 
 } // namespace Jug::Fast

@@ -5,11 +5,11 @@
 #include <cmath>
 #include <fmt/format.h>
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -25,31 +25,31 @@
 
 namespace Jug::Reco {
 
-class FarForwardParticles : public GaudiAlgorithm {
+class FarForwardParticles : public JugAlgorithm {
 private:
-  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"FarForwardTrackerHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"FarForwardTrackerHits", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Jug::DataHandle::Writer,
                                                                      this};
 
   //----- Define constants here ------
 
-  Gaudi::Property<double> local_x_offset_station_1{this, "localXOffsetSta1", -833.3878326};
-  Gaudi::Property<double> local_x_offset_station_2{this, "localXOffsetSta2", -924.342804};
-  Gaudi::Property<double> local_x_slope_offset{this, "localXSlopeOffset", -0.00622147};
-  Gaudi::Property<double> local_y_slope_offset{this, "localYSlopeOffset", -0.0451035};
-  Gaudi::Property<double> crossingAngle{this, "crossingAngle", -0.025};
-  Gaudi::Property<double> nomMomentum{this, "beamMomentum", 275.0};
+  Jug::Property<double> local_x_offset_station_1{this, "localXOffsetSta1", -833.3878326};
+  Jug::Property<double> local_x_offset_station_2{this, "localXOffsetSta2", -924.342804};
+  Jug::Property<double> local_x_slope_offset{this, "localXSlopeOffset", -0.00622147};
+  Jug::Property<double> local_y_slope_offset{this, "localYSlopeOffset", -0.0451035};
+  Jug::Property<double> crossingAngle{this, "crossingAngle", -0.025};
+  Jug::Property<double> nomMomentum{this, "beamMomentum", 275.0};
 
-  Gaudi::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
-  Gaudi::Property<std::string> m_readout{this, "readoutClass", ""};
-  Gaudi::Property<std::string> m_layerField{this, "layerField", ""};
-  Gaudi::Property<std::string> m_sectorField{this, "sectorField", ""};
+  Jug::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
+  Jug::Property<std::string> m_readout{this, "readoutClass", ""};
+  Jug::Property<std::string> m_layerField{this, "layerField", ""};
+  Jug::Property<std::string> m_sectorField{this, "sectorField", ""};
   SmartIF<IGeoSvc> m_geoSvc;
   dd4hep::BitFieldCoder* id_dec = nullptr;
   size_t sector_idx{0}, layer_idx{0};
 
-  Gaudi::Property<std::string> m_localDetElement{this, "localDetElement", ""};
-  Gaudi::Property<std::vector<std::string>> u_localDetFields{this, "localDetFields", {}};
+  Jug::Property<std::string> m_localDetElement{this, "localDetElement", ""};
+  Jug::Property<std::vector<std::string>> u_localDetFields{this, "localDetFields", {}};
   dd4hep::DetElement local;
   size_t local_mask = ~0;
 
@@ -60,7 +60,7 @@ private:
   double aYRPinv[2][2] = {{0.0, 0.0}, {0.0, 0.0}};
 
 public:
-  FarForwardParticles(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  FarForwardParticles(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputCollection", m_inputHitCollection, "FarForwardTrackerHits");
     declareProperty("outputCollection", m_outputParticles, "ReconstructedParticles");
   }
@@ -73,7 +73,7 @@ public:
   // include the Eigen libraries, used in ACTS, for the linear algebra.
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_geoSvc = service(m_geoSvcName);
@@ -273,7 +273,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(FarForwardParticles)
 
 } // namespace Jug::Reco

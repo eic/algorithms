@@ -10,13 +10,13 @@
 #include <algorithm>
 #include <bitset>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -29,7 +29,7 @@
 #include "eicd/CalorimeterHitCollection.h"
 #include "eicd/RawCalorimeterHitCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -38,59 +38,59 @@ namespace Jug::Reco {
  * Reconstruct digitized outputs, paired with Jug::Digi::CalorimeterHitDigi
  * \ingroup reco
  */
-class CalorimeterHitReco : public GaudiAlgorithm {
+class CalorimeterHitReco : public JugAlgorithm {
 private:
   // length unit from dd4hep, should be fixed
-  Gaudi::Property<double> m_lUnit{this, "lengthUnit", dd4hep::mm};
+  Jug::Property<double> m_lUnit{this, "lengthUnit", dd4hep::mm};
 
   // digitization settings, must be consistent with digi class
-  Gaudi::Property<unsigned int> m_capADC{this, "capacityADC", 8096};
-  Gaudi::Property<double> m_dyRangeADC{this, "dynamicRangeADC", 100. * MeV};
-  Gaudi::Property<unsigned int> m_pedMeanADC{this, "pedestalMean", 400};
-  Gaudi::Property<double> m_pedSigmaADC{this, "pedestalSigma", 3.2};
-  Gaudi::Property<double> m_resolutionTDC{this, "resolutionTDC", 10 * ps};
+  Jug::Property<unsigned int> m_capADC{this, "capacityADC", 8096};
+  Jug::Property<double> m_dyRangeADC{this, "dynamicRangeADC", 100. * MeV};
+  Jug::Property<unsigned int> m_pedMeanADC{this, "pedestalMean", 400};
+  Jug::Property<double> m_pedSigmaADC{this, "pedestalSigma", 3.2};
+  Jug::Property<double> m_resolutionTDC{this, "resolutionTDC", 10 * ps};
 
   // zero suppression values
-  Gaudi::Property<double> m_thresholdFactor{this, "thresholdFactor", 0.0};
-  Gaudi::Property<double> m_thresholdValue{this, "thresholdValue", 0.0};
+  Jug::Property<double> m_thresholdFactor{this, "thresholdFactor", 0.0};
+  Jug::Property<double> m_thresholdValue{this, "thresholdValue", 0.0};
 
   // energy correction with sampling fraction
-  Gaudi::Property<double> m_sampFrac{this, "samplingFraction", 1.0};
+  Jug::Property<double> m_sampFrac{this, "samplingFraction", 1.0};
 
   // unitless counterparts of the input parameters
   double dyRangeADC{0};
   double thresholdADC{0};
   double stepTDC{0};
 
-  DataHandle<eicd::RawCalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
+  DataHandle<eicd::RawCalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader,
                                                                     this};
-  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer,
                                                                   this};
 
   // geometry service to get ids, ignored if no names provided
-  Gaudi::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
-  Gaudi::Property<std::string> m_readout{this, "readoutClass", ""};
-  Gaudi::Property<std::string> m_layerField{this, "layerField", ""};
-  Gaudi::Property<std::string> m_sectorField{this, "sectorField", ""};
+  Jug::Property<std::string> m_geoSvcName{this, "geoServiceName", "GeoSvc"};
+  Jug::Property<std::string> m_readout{this, "readoutClass", ""};
+  Jug::Property<std::string> m_layerField{this, "layerField", ""};
+  Jug::Property<std::string> m_sectorField{this, "sectorField", ""};
   SmartIF<IGeoSvc> m_geoSvc;
   dd4hep::BitFieldCoder* id_dec = nullptr;
   size_t sector_idx{0}, layer_idx{0};
 
   // name of detelment or fields to find the local detector (for global->local transform)
   // if nothing is provided, the lowest level DetElement (from cellID) will be used
-  Gaudi::Property<std::string> m_localDetElement{this, "localDetElement", ""};
-  Gaudi::Property<std::vector<std::string>> u_localDetFields{this, "localDetFields", {}};
+  Jug::Property<std::string> m_localDetElement{this, "localDetElement", ""};
+  Jug::Property<std::vector<std::string>> u_localDetFields{this, "localDetFields", {}};
   dd4hep::DetElement local;
   size_t local_mask = ~0;
 
 public:
-  CalorimeterHitReco(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  CalorimeterHitReco(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputHitCollection", m_outputHitCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -238,7 +238,5 @@ public:
 
 }; // class CalorimeterHitReco
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(CalorimeterHitReco)
 
 } // namespace Jug::Reco

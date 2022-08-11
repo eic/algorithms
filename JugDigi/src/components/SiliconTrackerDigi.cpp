@@ -4,11 +4,11 @@
 #include <algorithm>
 #include <cmath>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -25,24 +25,24 @@ namespace Jug::Digi {
  *
  * \ingroup digi
  */
-class SiliconTrackerDigi : public GaudiAlgorithm {
+class SiliconTrackerDigi : public JugAlgorithm {
 private:
-  Gaudi::Property<double> m_timeResolution{this, "timeResolution", 10}; // todo : add units
-  Gaudi::Property<double> m_threshold{this, "threshold", 0. * Gaudi::Units::keV};
+  Jug::Property<double> m_timeResolution{this, "timeResolution", 10}; // todo : add units
+  Jug::Property<double> m_threshold{this, "threshold", 0. * Jug::Units::keV};
   Rndm::Numbers m_gaussDist;
-  DataHandle<edm4hep::SimTrackerHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
+  DataHandle<edm4hep::SimTrackerHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader,
                                                                     this};
-  DataHandle<eicd::RawTrackerHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::RawTrackerHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer,
                                                                   this};
 
 public:
-  //  ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
-  SiliconTrackerDigi(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  //  ill-formed: using JugAlgorithm::JugAlgorithm;
+  SiliconTrackerDigi(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputHitCollection", m_outputHitCollection, "");
   }
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -69,9 +69,9 @@ public:
         debug() << "     momentum = (" << ahit.getMomentum().x << "," << ahit.getMomentum().y << ","
                 << ahit.getMomentum().z << ")" << endmsg;
       }
-      if (ahit.getEDep() * Gaudi::Units::keV < m_threshold) {
+      if (ahit.getEDep() * Jug::Units::keV < m_threshold) {
         if (msgLevel(MSG::DEBUG)) {
-          debug() << "         edep = " << ahit.getEDep() << " (below threshold of " << m_threshold / Gaudi::Units::keV
+          debug() << "         edep = " << ahit.getEDep() << " (below threshold of " << m_threshold / Jug::Units::keV
                   << " keV)" << endmsg;
         }
         continue;
@@ -96,7 +96,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(SiliconTrackerDigi)
 
 } // namespace Jug::Digi

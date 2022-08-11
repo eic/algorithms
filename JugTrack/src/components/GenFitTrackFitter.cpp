@@ -2,13 +2,13 @@
 // Copyright (C) 2022 Whitney Armstrong, Sylvester Joosten
 
 #include "GenFitTrackFitter.h"
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -57,7 +57,7 @@
 
 namespace Jug::Reco {
 
-GenFitTrackFitter::GenFitTrackFitter(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+GenFitTrackFitter::GenFitTrackFitter(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
   declareProperty("inputHitCollection", m_inputHitCollection, "");
   declareProperty("initialTrackParameters", m_initialTrackParameters, "");
   declareProperty("inputProtoTracks", m_inputProtoTracks, "");
@@ -66,7 +66,7 @@ GenFitTrackFitter::GenFitTrackFitter(const std::string& name, ISvcLocator* svcLo
 }
 
 StatusCode GenFitTrackFitter::initialize() {
-  if (GaudiAlgorithm::initialize().isFailure()) {
+  if (JugAlgorithm::initialize().isFailure()) {
     return StatusCode::FAILURE;
   }
   m_geoSvc = service("GeoSvc");
@@ -303,6 +303,4 @@ StatusCode GenFitTrackFitter::execute() {
   return StatusCode::SUCCESS;
 }
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(GenFitTrackFitter)
 } // namespace Jug::Reco

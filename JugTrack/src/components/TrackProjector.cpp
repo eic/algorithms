@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/SurfaceManager.h"
@@ -48,29 +48,29 @@ namespace Jug::Reco {
    *
    * \ingroup tracking
    */
-   class TrackProjector : public GaudiAlgorithm {
+   class TrackProjector : public JugAlgorithm {
    private:
-    DataHandle<TrajectoriesContainer>        m_inputTrajectories{"inputTrajectories", Gaudi::DataHandle::Reader, this};
-    DataHandle<eicd::TrackSegmentCollection> m_outputTrackSegments{"outputTrackSegments", Gaudi::DataHandle::Writer, this};
+    DataHandle<TrajectoriesContainer>        m_inputTrajectories{"inputTrajectories", Jug::DataHandle::Reader, this};
+    DataHandle<eicd::TrackSegmentCollection> m_outputTrackSegments{"outputTrackSegments", Jug::DataHandle::Writer, this};
 
-    Gaudi::Property<unsigned int> m_firstInVolumeID{this, "firstInVolumeID", 0};
-    Gaudi::Property<std::string> m_firstInVolumeName{this, "firstInVolumeName", ""};
-    Gaudi::Property<float> m_firstSmallerThanZ{this, "firstSmallerThanZ", 0};
-    Gaudi::Property<float> m_firstGreaterThanZ{this, "firstGreaterThanZ", 0};
-    Gaudi::Property<float> m_firstGreaterThanR{this, "firstGreaterThanR", -1};
+    Jug::Property<unsigned int> m_firstInVolumeID{this, "firstInVolumeID", 0};
+    Jug::Property<std::string> m_firstInVolumeName{this, "firstInVolumeName", ""};
+    Jug::Property<float> m_firstSmallerThanZ{this, "firstSmallerThanZ", 0};
+    Jug::Property<float> m_firstGreaterThanZ{this, "firstGreaterThanZ", 0};
+    Jug::Property<float> m_firstGreaterThanR{this, "firstGreaterThanR", -1};
 
     Acts::GeometryContext m_geoContext;
 
     public:
-    //  ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
+    //  ill-formed: using JugAlgorithm::JugAlgorithm;
     TrackProjector(const std::string& name, ISvcLocator* svcLoc)
-        : GaudiAlgorithm(name, svcLoc) {
+        : JugAlgorithm(name, svcLoc) {
           declareProperty("inputTrajectories", m_inputTrajectories,"");
           declareProperty("outputTrackSegments", m_outputTrackSegments, "");
         }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure())
+      if (JugAlgorithm::initialize().isFailure())
         return StatusCode::FAILURE;
       return StatusCode::SUCCESS;
     }
@@ -218,7 +218,5 @@ namespace Jug::Reco {
     }
 
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TrackProjector)
 
 } // namespace Jug::Reco

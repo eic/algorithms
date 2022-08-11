@@ -12,13 +12,13 @@
 #include "fmt/format.h"
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DD4hep/BitFieldCoder.h"
 #include "DDRec/CellIDPositionConverter.h"
@@ -34,7 +34,7 @@
 #include "eicd/ProtoClusterCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -48,44 +48,44 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class ImagingTopoCluster : public GaudiAlgorithm {
+class ImagingTopoCluster : public JugAlgorithm {
 private:
   // maximum difference in layer numbers that can be considered as neighbours
-  Gaudi::Property<int> m_neighbourLayersRange{this, "neighbourLayersRange", 1};
+  Jug::Property<int> m_neighbourLayersRange{this, "neighbourLayersRange", 1};
   // maximum distance of local (x, y) to be considered as neighbors at the same layer
-  Gaudi::Property<std::vector<double>> u_localDistXY{this, "localDistXY", {1.0 * mm, 1.0 * mm}};
+  Jug::Property<std::vector<double>> u_localDistXY{this, "localDistXY", {1.0 * mm, 1.0 * mm}};
   // maximum distance of global (eta, phi) to be considered as neighbors at different layers
-  Gaudi::Property<std::vector<double>> u_layerDistEtaPhi{this, "layerDistEtaPhi", {0.01, 0.01}};
+  Jug::Property<std::vector<double>> u_layerDistEtaPhi{this, "layerDistEtaPhi", {0.01, 0.01}};
   // maximum global distance to be considered as neighbors in different sectors
-  Gaudi::Property<double> m_sectorDist{this, "sectorDist", 1.0 * cm};
+  Jug::Property<double> m_sectorDist{this, "sectorDist", 1.0 * cm};
 
   // minimum hit energy to participate clustering
-  Gaudi::Property<double> m_minClusterHitEdep{this, "minClusterHitEdep", 0.};
+  Jug::Property<double> m_minClusterHitEdep{this, "minClusterHitEdep", 0.};
   // minimum cluster center energy (to be considered as a seed for cluster)
-  Gaudi::Property<double> m_minClusterCenterEdep{this, "minClusterCenterEdep", 0.};
+  Jug::Property<double> m_minClusterCenterEdep{this, "minClusterCenterEdep", 0.};
   // minimum cluster energy (to save this cluster)
-  Gaudi::Property<double> m_minClusterEdep{this, "minClusterEdep", 0.5 * MeV};
+  Jug::Property<double> m_minClusterEdep{this, "minClusterEdep", 0.5 * MeV};
   // minimum number of hits (to save this cluster)
-  Gaudi::Property<int> m_minClusterNhits{this, "minClusterNhits", 10};
+  Jug::Property<int> m_minClusterNhits{this, "minClusterNhits", 10};
   // input hits collection
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader,
                                                                   this};
   // output clustered hits
   DataHandle<eicd::ProtoClusterCollection> m_outputProtoClusterCollection{"outputProtoClusterCollection",
-                                                                          Gaudi::DataHandle::Writer, this};
+                                                                          Jug::DataHandle::Writer, this};
 
   // unitless counterparts of the input parameters
   double localDistXY[2]{0,0}, layerDistEtaPhi[2]{0,0}, sectorDist{0};
   double minClusterHitEdep{0}, minClusterCenterEdep{0}, minClusterEdep{0}, minClusterNhits{0};
 
 public:
-  ImagingTopoCluster(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ImagingTopoCluster(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputProtoClusterCollection", m_outputProtoClusterCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -228,7 +228,5 @@ private:
   }
 }; // namespace Jug::Reco
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ImagingTopoCluster)
 
 } // namespace Jug::Reco

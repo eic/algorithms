@@ -11,13 +11,13 @@
 #include <fmt/format.h>
 #include <unordered_map>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -31,7 +31,7 @@
 #include "eicd/CalorimeterHitCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -44,25 +44,25 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class ImagingPixelDataCombiner : public GaudiAlgorithm {
+class ImagingPixelDataCombiner : public JugAlgorithm {
 private:
-  Gaudi::Property<int> m_layerIncrement{this, "layerIncrement", 0};
-  Gaudi::Property<std::string> m_rule{this, "rule", "concatenate"};
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHits1{"inputHits1", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHits2{"inputHits2", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::CalorimeterHitCollection> m_outputHits{"outputHits", Gaudi::DataHandle::Writer, this};
+  Jug::Property<int> m_layerIncrement{this, "layerIncrement", 0};
+  Jug::Property<std::string> m_rule{this, "rule", "concatenate"};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHits1{"inputHits1", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHits2{"inputHits2", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::CalorimeterHitCollection> m_outputHits{"outputHits", Jug::DataHandle::Writer, this};
   std::vector<std::string> supported_rules{"concatenate", "interlayer"};
 
 public:
   ImagingPixelDataCombiner(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHits1", m_inputHits1, "");
     declareProperty("inputHits2", m_inputHits2, "");
     declareProperty("outputHits", m_outputHits, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -156,7 +156,5 @@ public:
 
 }; // class ImagingPixelDataCombiner
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ImagingPixelDataCombiner)
 
 } // namespace Jug::Reco

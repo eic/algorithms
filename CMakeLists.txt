@@ -78,7 +78,7 @@ find_path(genfit2_INCLUDE_DIR NAMES GFGbl.h PATHS /usr/local/include ${genfit2}/
 
 #add_subdirectory(JugBase)
 add_subdirectory(JugDigi)
-#add_subdirectory(JugFast)
-#add_subdirectory(JugPID)
-#add_subdirectory(JugReco)
-#add_subdirectory(JugTrack)
+add_subdirectory(JugFast)
+add_subdirectory(JugPID)
+add_subdirectory(JugReco)
+add_subdirectory(JugTrack)

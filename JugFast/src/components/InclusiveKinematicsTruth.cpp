@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2022 Wouter Deconinck
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/PhysicalConstants.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/PhysicalConstants.h"
 #include <algorithm>
 #include <cmath>
 
@@ -26,15 +26,15 @@ using ROOT::Math::PxPyPzEVector;
 
 namespace Jug::Fast {
 
-class InclusiveKinematicsTruth : public GaudiAlgorithm {
+class InclusiveKinematicsTruth : public JugAlgorithm {
 private:
   DataHandle<edm4hep::MCParticleCollection> m_inputMCParticleCollection{
     "inputMCParticles",
-    Gaudi::DataHandle::Reader,
+    Jug::DataHandle::Reader,
     this};
   DataHandle<eicd::InclusiveKinematicsCollection> m_outputInclusiveKinematicsCollection{
     "outputInclusiveKinematics",
-    Gaudi::DataHandle::Writer,
+    Jug::DataHandle::Writer,
     this};
 
   SmartIF<IParticleSvc> m_pidSvc;
@@ -44,13 +44,13 @@ private:
 
 public:
   InclusiveKinematicsTruth(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputMCParticles", m_inputMCParticleCollection, "MCParticles");
     declareProperty("outputInclusiveKinematics", m_outputInclusiveKinematicsCollection, "InclusiveKinematicsTruth");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -152,7 +152,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(InclusiveKinematicsTruth)
 
 } // namespace Jug::Fast

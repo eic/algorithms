@@ -2,13 +2,13 @@
 // Copyright (C) 2022 Whitney Armstrong, Wouter Deconinck, Sylvester Joosten
 
 #include <cmath>
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -33,22 +33,22 @@ namespace Jug::Reco {
    *
    *  \ingroup tracking
    */
-  class TruthTrackSeeding : public GaudiAlgorithm {
+  class TruthTrackSeeding : public JugAlgorithm {
   private:
-    DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Gaudi::DataHandle::Reader,
+    DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Jug::DataHandle::Reader,
                                                                     this};
     DataHandle<eicd::TrackParametersCollection> m_outputTrackParameters{"outputTrackParameters",
-                                                                       Gaudi::DataHandle::Writer, this};
+                                                                       Jug::DataHandle::Writer, this};
     SmartIF<IParticleSvc> m_pidSvc;
 
   public:
-    TruthTrackSeeding(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+    TruthTrackSeeding(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
       declareProperty("inputMCParticles", m_inputMCParticles, "mcparticle truth data from npsim");
       declareProperty("outputTrackParameters", m_outputTrackParameters, "Output initial track parameters");
     }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -119,7 +119,5 @@ namespace Jug::Reco {
       return StatusCode::SUCCESS;
     }
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TruthTrackSeeding)
 
 } // namespace Jug::reco

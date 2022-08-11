@@ -9,14 +9,12 @@
 #include "JugBase/DataWrapper.h"
 #include "JugBase/PodioDataSvc.h"
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(PodioInput)
 
 PodioInput::PodioInput(const std::string& name, ISvcLocator* svcLoc)
-: GaudiAlgorithm(name, svcLoc), m_podioDataSvc(nullptr) {}
+: JugAlgorithm(name, svcLoc), m_podioDataSvc(nullptr) {}
 
 StatusCode PodioInput::initialize() {
-  if (GaudiAlgorithm::initialize().isFailure()) {
+  if (JugAlgorithm::initialize().isFailure()) {
     return StatusCode::FAILURE;
   }
 
@@ -54,7 +52,7 @@ StatusCode PodioInput::execute() {
 }
 
 StatusCode PodioInput::finalize() {
-  if (GaudiAlgorithm::finalize().isFailure()) {
+  if (JugAlgorithm::finalize().isFailure()) {
     return StatusCode::FAILURE;
   }
   return StatusCode::SUCCESS;

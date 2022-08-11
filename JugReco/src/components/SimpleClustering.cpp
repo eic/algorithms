@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -26,7 +26,7 @@
 #include "eicd/RawCalorimeterHitCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -34,20 +34,20 @@ namespace Jug::Reco {
    *
    * \ingroup reco
    */
-  class SimpleClustering : public GaudiAlgorithm {
+  class SimpleClustering : public JugAlgorithm {
   private:
     using RecHits  = eicd::CalorimeterHitCollection;
     using ProtoClusters = eicd::ProtoClusterCollection;
     using Clusters = eicd::ClusterCollection;
 
-    DataHandle<RecHits>       m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-    DataHandle<ProtoClusters> m_outputProtoClusters{"outputProtoCluster", Gaudi::DataHandle::Writer, this};
-    DataHandle<Clusters>      m_outputClusters{"outputClusterCollection", Gaudi::DataHandle::Writer, this};
+    DataHandle<RecHits>       m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+    DataHandle<ProtoClusters> m_outputProtoClusters{"outputProtoCluster", Jug::DataHandle::Writer, this};
+    DataHandle<Clusters>      m_outputClusters{"outputClusterCollection", Jug::DataHandle::Writer, this};
 
-    Gaudi::Property<std::string> m_mcHits{this, "mcHits", ""};
+    Jug::Property<std::string> m_mcHits{this, "mcHits", ""};
 
-    Gaudi::Property<double>   m_minModuleEdep{this, "minModuleEdep", 5.0 * MeV};
-    Gaudi::Property<double>   m_maxDistance{this, "maxDistance", 20.0 * cm};
+    Jug::Property<double>   m_minModuleEdep{this, "minModuleEdep", 5.0 * MeV};
+    Jug::Property<double>   m_maxDistance{this, "maxDistance", 20.0 * cm};
 
     /// Pointer to the geometry service
     SmartIF<IGeoSvc> m_geoSvc;
@@ -57,7 +57,7 @@ namespace Jug::Reco {
 
   public:
     SimpleClustering(const std::string& name, ISvcLocator* svcLoc) 
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
       declareProperty("inputHitCollection", m_inputHitCollection, "");
       declareProperty("outputProtoClusterCollection", m_outputClusters, "Output proto clusters");
       declareProperty("outputClusterCollection", m_outputClusters, "Output clusters");
@@ -65,13 +65,13 @@ namespace Jug::Reco {
 
     StatusCode initialize() override
     {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       // Initialize the MC input hit collection if requested
       if (m_mcHits != "") {
         m_inputMC =
-            std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Gaudi::DataHandle::Reader, this);
+            std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Jug::DataHandle::Reader, this);
       }
       m_geoSvc = service("GeoSvc");
       if (!m_geoSvc) {
@@ -179,7 +179,5 @@ namespace Jug::Reco {
     }
   };
 
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(SimpleClustering)
 
 } // namespace Jug::Reco

@@ -5,8 +5,8 @@
 #define TESTRECONSTRUCTION_TESTACTSLOGGER_H
 
 // GAUDI
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "Gaudi/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "Jug/Property.h"
 
 // FCCSW
 #include "JugBase/DataHandle.h"
@@ -15,7 +15,7 @@
  *
  * \ingroup tracking
  */
-class TestACTSLogger : public GaudiAlgorithm {
+class TestACTSLogger : public JugAlgorithm {
 public:
   explicit TestACTSLogger(const std::string&, ISvcLocator*);
   virtual ~TestACTSLogger();

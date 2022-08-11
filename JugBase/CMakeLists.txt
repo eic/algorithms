@@ -58,22 +58,3 @@ install(TARGETS JugBase JugBasePlugins
   RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}" COMPONENT bin
   LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT shlib
   COMPONENT dev)
-
-if(BUILD_TESTING)
-  enable_testing()
-endif()
-
-#add_test(NAME ProduceForReadTest
-#         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#         COMMAND ${CMAKE_BINARY_DIR}/run ${PROJECT_SOURCE_DIR}/JugBase/scripts/gaudirun tests/options/simple_producer.py)
-#add_test(NAME ReadTest
-#         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#         COMMAND ${CMAKE_BINARY_DIR}/run ${PROJECT_SOURCE_DIR}/JugBase/scripts/gaudirun tests/options/simple_reader.py)
-#add_test(NAME ReadGeoTest
-#         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#         COMMAND ${CMAKE_BINARY_DIR}/run ${PROJECT_SOURCE_DIR}/JugBase/scripts/gaudirun tests/options/reader_with_geosvc.py)
-#add_test(NAME CheckReadCollectionSize
-#         ENVIRONMENT PYTHONPATH+=${PODIO_PYTHON_DIR}
-#         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-#         COMMAND python JugBase/tests/scripts/check_coll_after_read.py
-#         DEPENDS ReadTest)

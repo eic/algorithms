@@ -5,11 +5,11 @@
 #include <cmath>
 #include <fmt/format.h>
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -25,43 +25,43 @@ enum DetectorTags { kTagB0 = 1, kTagRP = 2, kTagOMD = 3, kTagZDC = 4 };
 
 namespace Jug::Fast {
 
-class SmearedFarForwardParticles : public GaudiAlgorithm {
+class SmearedFarForwardParticles : public JugAlgorithm {
 private:
-  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Gaudi::DataHandle::Reader, this};
+  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Jug::DataHandle::Reader, this};
   DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"SmearedFarForwardParticles",
-                                                                      Gaudi::DataHandle::Writer, this};
+                                                                      Jug::DataHandle::Writer, this};
   DataHandle<eicd::MCRecoParticleAssociationCollection> m_outputAssocCollection{"MCRecoParticleAssociation",
-                                                                                Gaudi::DataHandle::Writer, this};
+                                                                                Jug::DataHandle::Writer, this};
 
-  Gaudi::Property<bool> m_enableZDC{this, "enableZDC", true};
-  Gaudi::Property<bool> m_enableB0{this, "enableB0", true};
-  Gaudi::Property<bool> m_enableRP{this, "enableRP", true};
-  Gaudi::Property<bool> m_enableOMD{this, "enableOMD", true};
+  Jug::Property<bool> m_enableZDC{this, "enableZDC", true};
+  Jug::Property<bool> m_enableB0{this, "enableB0", true};
+  Jug::Property<bool> m_enableRP{this, "enableRP", true};
+  Jug::Property<bool> m_enableOMD{this, "enableOMD", true};
 
   // Beam energy, only used to determine the RP/OMD momentum ranges
-  Gaudi::Property<double> m_ionBeamEnergy{this, "ionBeamEnergy", 0.};
+  Jug::Property<double> m_ionBeamEnergy{this, "ionBeamEnergy", 0.};
   // RP default to 10-on-100 setting
   // Pz > 60% of beam energy (60% x 100GeV = 60GeV)
   // theta from 0.2mrad -> 5mrad
-  Gaudi::Property<double> m_thetaMinRP{this, "thetaMinRP", 0.2e-3};
-  Gaudi::Property<double> m_thetaMaxRP{this, "thetaMaxRP", 5e-3};
-  Gaudi::Property<double> m_pMinRigidityRP{this, "pMinRigidityRP", 0.60};
+  Jug::Property<double> m_thetaMinRP{this, "thetaMinRP", 0.2e-3};
+  Jug::Property<double> m_thetaMaxRP{this, "thetaMaxRP", 5e-3};
+  Jug::Property<double> m_pMinRigidityRP{this, "pMinRigidityRP", 0.60};
   // B0
-  Gaudi::Property<double> m_thetaMinB0{this, "thetaMinB0", 6.0e-3};
-  Gaudi::Property<double> m_thetaMaxB0{this, "thetaMaxB0", 20.0e-3};
+  Jug::Property<double> m_thetaMinB0{this, "thetaMinB0", 6.0e-3};
+  Jug::Property<double> m_thetaMaxB0{this, "thetaMaxB0", 20.0e-3};
   // OMD default to 10-on-100 setting
   // 25% < P/Ebeam < 60% of beam energy (25% x 100GeV = 25GeV and 60% x 100GeV = 60GeV)
   // Angles both given for the small angle full-acceptance part,
   // and for the larger angle part where we only measure |phi| > rad
-  Gaudi::Property<double> m_thetaMinFullOMD{this, "thetaMinFullOMD", 0.};
-  Gaudi::Property<double> m_thetaMaxFullOMD{this, "thetaMaxFullOMD", 2e-3};
-  Gaudi::Property<double> m_thetaMinPartialOMD{this, "thetaMinPartialOMD", 2.0e-3};
-  Gaudi::Property<double> m_thetaMaxPartialOMD{this, "thetaMaxPartialOMD", 5.0e-3};
-  Gaudi::Property<double> m_pMinRigidityOMD{this, "pMinRigidityOMD", 0.25};
-  Gaudi::Property<double> m_pMaxRigidityOMD{this, "pMaxRigidityOMD", 0.60};
+  Jug::Property<double> m_thetaMinFullOMD{this, "thetaMinFullOMD", 0.};
+  Jug::Property<double> m_thetaMaxFullOMD{this, "thetaMaxFullOMD", 2e-3};
+  Jug::Property<double> m_thetaMinPartialOMD{this, "thetaMinPartialOMD", 2.0e-3};
+  Jug::Property<double> m_thetaMaxPartialOMD{this, "thetaMaxPartialOMD", 5.0e-3};
+  Jug::Property<double> m_pMinRigidityOMD{this, "pMinRigidityOMD", 0.25};
+  Jug::Property<double> m_pMaxRigidityOMD{this, "pMaxRigidityOMD", 0.60};
 
   // Crossing angle, set to -25mrad
-  Gaudi::Property<double> m_crossingAngle{this, "crossingAngle",
+  Jug::Property<double> m_crossingAngle{this, "crossingAngle",
                                           -0.025}; //-0.025}; -- causes double rotation with afterburner
 
   Rndm::Numbers m_gaussDist;
@@ -71,13 +71,13 @@ private:
   using RecData = std::pair<RecPart, Assoc>;
 
 public:
-  SmearedFarForwardParticles(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  SmearedFarForwardParticles(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputMCParticles", m_inputMCParticles, "MCParticles");
     declareProperty("outputParticles", m_outputParticles, "ReconstructedParticles");
     declareProperty("outputAssociations", m_outputAssocCollection, "MCRecoParticleAssociation");
   }
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -414,7 +414,5 @@ private:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(SmearedFarForwardParticles)
 
 } // namespace Jug::Fast

@@ -1,14 +1,14 @@
-#include "GaudiAlg/GaudiAlgorithm.h"
+#include "JugAlg/JugAlgorithm.h"
 
 #include "JugBase/DataHandle.h"
 
 #include "edm4hep/MCParticleCollection.h"
 
-class ReadTestConsumer : public GaudiAlgorithm {
+class ReadTestConsumer : public JugAlgorithm {
 
 public:
   ReadTestConsumer(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc), m_genParticles("MCParticles", Gaudi::DataHandle::Reader, this) {
+      : JugAlgorithm(name, svcLoc), m_genParticles("MCParticles", Jug::DataHandle::Reader, this) {
     declareProperty("genParticles", m_genParticles, "mc particles to read");
   }
 
@@ -16,7 +16,7 @@ public:
 
   StatusCode initialize() {
     warning() << "This is a deprecated test algorithm" << endmsg;
-    return GaudiAlgorithm::initialize(); }
+    return JugAlgorithm::initialize(); }
 
   StatusCode execute() {
     // Read the input
@@ -36,10 +36,9 @@ public:
     return StatusCode::SUCCESS;
   }
 
-  StatusCode finalize() { return GaudiAlgorithm::finalize(); }
+  StatusCode finalize() { return JugAlgorithm::finalize(); }
 
 private:
   /// Particles to read
   DataHandle<edm4hep::MCParticleCollection> m_genParticles;
 };
-DECLARE_COMPONENT(ReadTestConsumer)

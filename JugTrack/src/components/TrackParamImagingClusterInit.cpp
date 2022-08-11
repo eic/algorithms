@@ -2,13 +2,13 @@
 // Copyright (C) 2022 Whitney Armstrong, Wouter Deconinck, Sylvester Joosten
 
 #include <cmath>
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -42,23 +42,23 @@ namespace Jug::Reco {
    *
    *  \ingroup tracking
    */
-  class TrackParamImagingClusterInit : public GaudiAlgorithm {
+  class TrackParamImagingClusterInit : public JugAlgorithm {
   private:
     using ImagingClusters =  eicd::ClusterCollection;
 
-    DataHandle<ImagingClusters>          m_inputClusters{"inputClusters", Gaudi::DataHandle::Reader, this};
+    DataHandle<ImagingClusters>          m_inputClusters{"inputClusters", Jug::DataHandle::Reader, this};
     DataHandle<TrackParametersContainer> m_outputInitialTrackParameters{"outputInitialTrackParameters",
-                                                                        Gaudi::DataHandle::Writer, this};
+                                                                        Jug::DataHandle::Writer, this};
 
   public:
     TrackParamImagingClusterInit(const std::string& name, ISvcLocator* svcLoc)
-        : GaudiAlgorithm(name, svcLoc) {
+        : JugAlgorithm(name, svcLoc) {
       declareProperty("inputClusters", m_inputClusters, "Input clusters");
       declareProperty("outputInitialTrackParameters", m_outputInitialTrackParameters, "");
     }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -117,7 +117,5 @@ namespace Jug::Reco {
       return StatusCode::SUCCESS;
     }
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TrackParamImagingClusterInit)
 
 } // namespace Jug::reco

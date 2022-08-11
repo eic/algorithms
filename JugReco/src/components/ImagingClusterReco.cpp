@@ -11,13 +11,13 @@
 #include <Eigen/Dense>
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -37,7 +37,7 @@
 #include "eicd/ProtoClusterCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 using namespace Eigen;
 
 namespace Jug::Reco {
@@ -49,47 +49,47 @@ namespace Jug::Reco {
  *
  *  \ingroup reco
  */
-class ImagingClusterReco : public GaudiAlgorithm {
+class ImagingClusterReco : public JugAlgorithm {
 private:
-  Gaudi::Property<int> m_trackStopLayer{this, "trackStopLayer", 9};
+  Jug::Property<int> m_trackStopLayer{this, "trackStopLayer", 9};
 
-  DataHandle<eicd::ProtoClusterCollection> m_inputProtoClusters{"inputProtoClusters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ClusterCollection> m_outputLayers{"outputLayers", Gaudi::DataHandle::Writer, this};
-  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusters", Gaudi::DataHandle::Reader, this};
+  DataHandle<eicd::ProtoClusterCollection> m_inputProtoClusters{"inputProtoClusters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_outputLayers{"outputLayers", Jug::DataHandle::Writer, this};
+  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusters", Jug::DataHandle::Reader, this};
 
   // Collection for MC hits when running on MC
-  Gaudi::Property<std::string> m_mcHits{this, "mcHits", ""};
+  Jug::Property<std::string> m_mcHits{this, "mcHits", ""};
   // Optional handle to MC hits
   std::unique_ptr<DataHandle<edm4hep::SimCalorimeterHitCollection>> m_mcHits_ptr;
 
   // Collection for associations when running on MC
-  Gaudi::Property<std::string> m_outputAssociations{this, "outputAssociations", ""};
+  Jug::Property<std::string> m_outputAssociations{this, "outputAssociations", ""};
   // Optional handle to MC hits
   std::unique_ptr<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>> m_outputAssociations_ptr;
 
 public:
-  ImagingClusterReco(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ImagingClusterReco(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputProtoClusters", m_inputProtoClusters, "");
     declareProperty("outputLayers", m_outputLayers, "");
     declareProperty("outputClusters", m_outputClusters, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
     // Initialize the optional MC input hit collection if requested
     if (m_mcHits != "") {
       m_mcHits_ptr =
-        std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Gaudi::DataHandle::Reader,
+        std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Jug::DataHandle::Reader,
         this);
     }
 
     // Initialize the optional association collection if requested
     if (m_outputAssociations != "") {
       m_outputAssociations_ptr =
-        std::make_unique<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>>(m_outputAssociations, Gaudi::DataHandle::Writer,
+        std::make_unique<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>>(m_outputAssociations, Jug::DataHandle::Writer,
         this);
     }
 
@@ -348,7 +348,5 @@ private:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ImagingClusterReco)
 
 } // namespace Jug::Reco

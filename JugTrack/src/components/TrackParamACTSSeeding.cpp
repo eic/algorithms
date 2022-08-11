@@ -16,13 +16,13 @@
 #include "Acts/Seeding/EstimateTrackParamsFromSeed.hpp"
 #include "Acts/Surfaces/PerigeeSurface.hpp"
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -55,21 +55,21 @@ namespace Jug::Reco {
      *  TrackParmetersContainer
      *  \ingroup tracking
      */
-    class TrackParamACTSSeeding : public GaudiAlgorithm {
+    class TrackParamACTSSeeding : public JugAlgorithm {
     public:
         DataHandle<IndexSourceLinkContainer>
         m_inputSourceLinks { "inputSourceLinks",
-            Gaudi::DataHandle::Reader, this };
+            Jug::DataHandle::Reader, this };
         DataHandle<MeasurementContainer>
         m_inputMeasurements { "inputMeasurements",
-            Gaudi::DataHandle::Reader, this};
+            Jug::DataHandle::Reader, this};
         DataHandle<eicd::TrackerHitCollection>
         m_inputHitCollection { "inputHitCollection",
-            Gaudi::DataHandle::Reader, this };
+            Jug::DataHandle::Reader, this };
         DataHandle<TrackParametersContainer>
         m_outputInitialTrackParameters {
             "outputInitialTrackParameters",
-            Gaudi::DataHandle::Writer, this };
+            Jug::DataHandle::Writer, this };
 
         SmartIF<IGeoSvc> m_geoSvc;
         Acts::GeometryContext m_geoContext;
@@ -197,7 +197,7 @@ namespace Jug::Reco {
     public:
         TrackParamACTSSeeding(const std::string &name,
                               ISvcLocator* svcLoc)
-            : GaudiAlgorithm(name, svcLoc) {
+            : JugAlgorithm(name, svcLoc) {
             declareProperty("inputSourceLinks",
                             m_inputSourceLinks, "");
             declareProperty("inputMeasurements",
@@ -223,7 +223,7 @@ namespace Jug::Reco {
 
     StatusCode TrackParamACTSSeeding::initialize()
     {
-        if (GaudiAlgorithm::initialize().isFailure()) {
+        if (JugAlgorithm::initialize().isFailure()) {
             return StatusCode::FAILURE;
         }
 
@@ -552,5 +552,4 @@ namespace Jug::Reco {
         return StatusCode::SUCCESS;
     }
     
-    DECLARE_COMPONENT(TrackParamACTSSeeding)
 } // namespace Jug::reco

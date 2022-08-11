@@ -10,22 +10,19 @@
 #include <algorithm>
 #include <cmath>
 
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "Gaudi/Property.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "Jug/Property.h"
+#include "Jug/Service.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IParticleSvc.h"
 
 // Event Model related classes
 #include "edm4hep/SimCalorimeterHitCollection.h"
-#include "eicd/RawCalorimeterHitCollection.h"
-#include "eicd/RawCalorimeterHitData.h"
 
-
-using namespace Gaudi::Units;
 
 namespace Jug::Digi {
 
@@ -34,73 +31,40 @@ namespace Jug::Digi {
    * \ingroup digi
    * \ingroup calorimetry
    */
-  class CalorimeterBirksCorr : public GaudiAlgorithm {
+  class CalorimeterBirksCorr : public JugAlgorithm {
   public:
 
-    // digitization settings
-    Gaudi::Property<double> m_birksConstant{this, "birksConstant", 0.126*mm/MeV};
+    // Types
+    using InputCollection = edm4hep::SimCalorimeterHitCollection;
+    using OutputCollection = edm4hep::SimCalorimeterHitCollection;
 
-    DataHandle<edm4hep::SimCalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
-                                                                      this};
-    DataHandle<edm4hep::SimCalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
-                                                                       this};
+    // Properties
+    Jug::Property<double> m_birksConstant{this, "birksConstant", 0.126*mm/MeV};
 
-    SmartIF<IParticleSvc> m_pidSvc;
-    // unitless conterpart of arguments
-    double birksConstant{0};
+    // Services
+    Jug::Service<Jug::Base::Particle(int)> m_pidSvc;
 
-    //  ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
-    CalorimeterBirksCorr(const std::string& name, ISvcLocator* svcLoc) 
-      : GaudiAlgorithm(name, svcLoc)
+    OutputCollection operator()(const InputCollection& input) const
     {
-      declareProperty("inputHitCollection", m_inputHitCollection, "");
-      declareProperty("outputHitCollection", m_outputHitCollection, "");
-    }
-
-    StatusCode initialize() override
-    {
-      if (GaudiAlgorithm::initialize().isFailure()) {
-        return StatusCode::FAILURE;
-      }
-
-      m_pidSvc = service("ParticleSvc");
-      if (!m_pidSvc) {
-        error() << "Unable to locate Particle Service. "
-                << "Make sure you have ParticleSvc in the configuration."
-                << endmsg;
-        return StatusCode::FAILURE;
-      }
-
-      // using juggler internal units (GeV, mm, radian, ns)
-      birksConstant = m_birksConstant.value() / mm * GeV;
-
-      return StatusCode::SUCCESS;
-    }
-
-    StatusCode execute() override
-    {
-      auto& ohits = *m_outputHitCollection.createAndPut();
-      for (const auto& hit : *m_inputHitCollection.get()) {
+      OutputCollection ohits;
+      for (const auto& hit : input) {
         auto ohit = ohits->create(hit.getCellID(), hit.getEnergy(), hit.getPosition());
         double energy = 0.;
         for (const auto &c: hit.getContributions()) {
           ohit.addToContributions(c);
-          const double charge = m_pidSvc->particle(c.getPDG()).charge;
+          const double charge = m_pidSvc(c.getPDG()).charge;
           // some tolerance for precision
           if (std::abs(charge) > 1e-5) {
             // FIXME
-            //energy += c.getEnergy() / (1. + c.getEnergy() / c.length * birksConstant);
+            //energy += c.getEnergy() / (1. + c.getEnergy() / c.length * m_birksConstant);
             error() << "edm4hep::CaloHitContribution has no length field for Birks correction." << endmsg;
-            return StatusCode::FAILURE;
           }
         }
         // replace energy deposit with Birks Law corrected value
         ohit.setEnergy(energy);
       }
-      return StatusCode::SUCCESS;
+      return ohits;
     }
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(CalorimeterBirksCorr)
 
 } // namespace Jug::Digi

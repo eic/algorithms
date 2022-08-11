@@ -14,13 +14,13 @@
 #include <bitset>
 #include <unordered_map>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -34,7 +34,7 @@
 #include "eicd/CalorimeterHitCollection.h"
 #include <eicd/vector_utils.h>
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 struct PairHashFunction {
   template <class T1, class T2> std::size_t operator()(const std::pair<T1, T2>& pair) const {
@@ -52,21 +52,21 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class ImagingPixelMerger : public GaudiAlgorithm {
+class ImagingPixelMerger : public JugAlgorithm {
 private:
-  Gaudi::Property<float> m_etaSize{this, "etaSize", 0.001};
-  Gaudi::Property<float> m_phiSize{this, "phiSize", 0.001};
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHits{"inputHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::CalorimeterHitCollection> m_outputHits{"outputHits", Gaudi::DataHandle::Writer, this};
+  Jug::Property<float> m_etaSize{this, "etaSize", 0.001};
+  Jug::Property<float> m_phiSize{this, "phiSize", 0.001};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHits{"inputHits", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::CalorimeterHitCollection> m_outputHits{"outputHits", Jug::DataHandle::Writer, this};
 
 public:
-  ImagingPixelMerger(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ImagingPixelMerger(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHits", m_inputHits, "");
     declareProperty("outputHits", m_outputHits, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -165,7 +165,5 @@ private:
   }
 }; // class ImagingPixelMerger
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ImagingPixelMerger)
 
 } // namespace Jug::Reco

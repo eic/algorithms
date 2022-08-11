@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2022 Whitney Armstrong, Sylvester Joosten, Chao Peng
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -18,18 +18,18 @@ namespace Jug::Reco {
      *
      * \ingroup reco
      */
-    class TrackingHitsCollector : public GaudiAlgorithm {
+    class TrackingHitsCollector : public JugAlgorithm {
     private:
-      DataHandle<eicd::TrackerHitCollection> m_trackerBarrelHits{"trackerBarrelHits", Gaudi::DataHandle::Reader, this};
-      DataHandle<eicd::TrackerHitCollection> m_trackerEndcapHits{"trackerEndcapHits", Gaudi::DataHandle::Reader, this};
-      DataHandle<eicd::TrackerHitCollection> m_vertexBarrelHits {"vertexBarrelHits" , Gaudi::DataHandle::Reader, this};
-      DataHandle<eicd::TrackerHitCollection> m_vertexEndcapHits {"vertexEndcapHits" , Gaudi::DataHandle::Reader, this};
-      DataHandle<eicd::TrackerHitCollection> m_gemEndcapHits {"gemEndcapHits" , Gaudi::DataHandle::Reader, this};
-      DataHandle<eicd::TrackerHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer, this};
+      DataHandle<eicd::TrackerHitCollection> m_trackerBarrelHits{"trackerBarrelHits", Jug::DataHandle::Reader, this};
+      DataHandle<eicd::TrackerHitCollection> m_trackerEndcapHits{"trackerEndcapHits", Jug::DataHandle::Reader, this};
+      DataHandle<eicd::TrackerHitCollection> m_vertexBarrelHits {"vertexBarrelHits" , Jug::DataHandle::Reader, this};
+      DataHandle<eicd::TrackerHitCollection> m_vertexEndcapHits {"vertexEndcapHits" , Jug::DataHandle::Reader, this};
+      DataHandle<eicd::TrackerHitCollection> m_gemEndcapHits {"gemEndcapHits" , Jug::DataHandle::Reader, this};
+      DataHandle<eicd::TrackerHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer, this};
 
     public:
       TrackingHitsCollector(const std::string& name, ISvcLocator* svcLoc)
-          : GaudiAlgorithm(name, svcLoc)
+          : JugAlgorithm(name, svcLoc)
       {
         declareProperty("trackerBarrelHits", m_trackerBarrelHits, "");
         declareProperty("trackerEndcapHits", m_trackerEndcapHits, "");
@@ -66,7 +66,5 @@ namespace Jug::Reco {
         return StatusCode::SUCCESS;
       }
     };
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    DECLARE_COMPONENT(TrackingHitsCollector)
 
 } // namespace Jug::Reco

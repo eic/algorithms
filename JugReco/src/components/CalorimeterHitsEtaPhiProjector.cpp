@@ -15,13 +15,13 @@
 #include <bitset>
 #include <unordered_map>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -35,7 +35,7 @@
 #include "eicd/CalorimeterHitCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 using Point3D = ROOT::Math::XYZPoint;
 
 struct pair_hash {
@@ -57,24 +57,24 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class CalorimeterHitsEtaPhiProjector : public GaudiAlgorithm {
+class CalorimeterHitsEtaPhiProjector : public JugAlgorithm {
 private:
-  Gaudi::Property<std::vector<double>> u_gridSizes{this, "gridSizes", {0.001, 0.001 * rad}};
-  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
+  Jug::Property<std::vector<double>> u_gridSizes{this, "gridSizes", {0.001, 0.001 * rad}};
+  DataHandle<eicd::CalorimeterHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader,
                                                                   this};
-  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::CalorimeterHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer,
                                                                    this};
 
   double gridSizes[2]{0.0, 0.0};
 
 public:
-  CalorimeterHitsEtaPhiProjector(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  CalorimeterHitsEtaPhiProjector(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputHitCollection", m_outputHitCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -132,7 +132,5 @@ public:
 
 }; // class CalorimeterHitsEtaPhiProjector
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(CalorimeterHitsEtaPhiProjector)
 
 } // namespace Jug::Reco

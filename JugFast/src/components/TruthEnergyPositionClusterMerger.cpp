@@ -5,12 +5,12 @@
 #include <numbers>
 
 #include <fmt/format.h>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -20,7 +20,7 @@
 #include "eicd/MCRecoClusterParticleAssociationCollection.h"
 #include <eicd/vector_utils.h>
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Fast {
 
@@ -32,21 +32,21 @@ namespace Jug::Fast {
  *
  * \ingroup reco
  */
-class TruthEnergyPositionClusterMerger : public GaudiAlgorithm {
+class TruthEnergyPositionClusterMerger : public JugAlgorithm {
 private:
   // Input
-  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ClusterCollection> m_energyClusters{"EnergyClusters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_energyAssociations{"EnergyAssociations", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ClusterCollection> m_positionClusters{"PositionClusters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_positionAssociations{"PositionAssociations", Gaudi::DataHandle::Reader, this};
+  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_energyClusters{"EnergyClusters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_energyAssociations{"EnergyAssociations", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_positionClusters{"PositionClusters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_positionAssociations{"PositionAssociations", Jug::DataHandle::Reader, this};
   // Output
-  DataHandle<eicd::ClusterCollection> m_outputClusters{"OutputClusters", Gaudi::DataHandle::Writer, this};
-  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_outputAssociations{"OutputAssociations", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::ClusterCollection> m_outputClusters{"OutputClusters", Jug::DataHandle::Writer, this};
+  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_outputAssociations{"OutputAssociations", Jug::DataHandle::Writer, this};
 
 public:
   TruthEnergyPositionClusterMerger(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputMCParticles", m_inputMCParticles, "MCParticles");
     declareProperty("inputEnergyClusters", m_energyClusters, "Cluster collection with good energy precision");
     declareProperty("inputEnergyAssociations", m_energyAssociations, "Cluster association with good energy precision");
@@ -237,7 +237,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(TruthEnergyPositionClusterMerger)
 
 } // namespace Jug::Fast

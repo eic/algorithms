@@ -5,11 +5,11 @@
 #include <cmath>
 #include <fmt/format.h>
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -20,20 +20,20 @@
 
 namespace Jug::Reco {
 
-class FarForwardParticlesOMD : public GaudiAlgorithm {
+class FarForwardParticlesOMD : public JugAlgorithm {
 private:
-  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"FarForwardTrackerHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"FarForwardTrackerHits", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Jug::DataHandle::Writer,
                                                                      this};
 
   //----- Define constants here ------
 
-  Gaudi::Property<double> local_x_offset_station_1{this, "localXOffsetSta1", -762.5006104};
-  Gaudi::Property<double> local_x_offset_station_2{this, "localXOffsetSta2", -881.9621277};
-  Gaudi::Property<double> local_x_slope_offset{this, "localXSlopeOffset", -59.73075865};
-  Gaudi::Property<double> local_y_slope_offset{this, "localYSlopeOffset", 0.0012755};
-  Gaudi::Property<double> crossingAngle{this, "crossingAngle", -0.025};
-  Gaudi::Property<double> nomMomentum{this, "beamMomentum", 137.5}; // This number is set to 50% maximum beam momentum
+  Jug::Property<double> local_x_offset_station_1{this, "localXOffsetSta1", -762.5006104};
+  Jug::Property<double> local_x_offset_station_2{this, "localXOffsetSta2", -881.9621277};
+  Jug::Property<double> local_x_slope_offset{this, "localXSlopeOffset", -59.73075865};
+  Jug::Property<double> local_y_slope_offset{this, "localYSlopeOffset", 0.0012755};
+  Jug::Property<double> crossingAngle{this, "crossingAngle", -0.025};
+  Jug::Property<double> nomMomentum{this, "beamMomentum", 137.5}; // This number is set to 50% maximum beam momentum
 
   const double aXOMD[2][2] = {{1.6229248, 12.9519653}, {-2.86056525, 0.1830292}};
   const double aYOMD[2][2] = {{0.0000185, -28.599739}, {0.00000925, -2.8795791}};
@@ -43,13 +43,13 @@ private:
 
 public:
   FarForwardParticlesOMD(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputCollection", m_inputHitCollection, "FarForwardTrackerHits");
     declareProperty("outputCollection", m_outputParticles, "ReconstructedParticles");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     double det = aXOMD[0][0] * aXOMD[1][1] - aXOMD[0][1] * aXOMD[1][0];
@@ -182,7 +182,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(FarForwardParticlesOMD)
 
 } // namespace Jug::Reco

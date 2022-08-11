@@ -14,13 +14,13 @@
 #include <cmath>
 #include <unordered_map>
 
+#include "DD4hep/DD4hepUnits.h"
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDSegmentation/BitFieldCoder.h"
 
-#include "JugBase/Algorithm.h"
-#include "JugBase/Property.h"
-#include "JugBase/IGeoSvc.h"
-#include "JugBase/DataHandle.h"
+#include "Jug/Algorithm.h"
+#include "Jug/Property.h"
+#include "Jug/Service.h"
 
 #include "fmt/format.h"
 #include "fmt/ranges.h"
@@ -36,7 +36,7 @@ namespace Jug::Digi {
    * \ingroup digi
    * \ingroup calorimetry
    */
-  class CalorimeterHitDigi : Jug::Algorithm {
+  class CalorimeterHitDigi : JugAlgorithm {
   public:
     // additional smearing resolutions
     Jug::Property<std::vector<double>> u_eRes{this, "energyResolutions", {}}; // a/sqrt(E/GeV) + b + c/(E/GeV)
@@ -63,14 +63,16 @@ namespace Jug::Digi {
     Jug::Property<std::vector<int>>         u_refs{this, "fieldRefNumbers", {}};
     Jug::Property<std::string>              m_readout{this, "readoutClass", ""};
 
+    // Geometry service
+    Jug::Service<dd4hep::Detector*(void)> m_geoSvc;
+
     // unitless counterparts of inputs
     double           dyRangeADC{0}, stepTDC{0}, tRes{0}, eRes[3] = {0., 0., 0.};
     uint64_t         id_mask{0}, ref_mask{0};
 
-    CalorimeterHitDigi(const std::string& name)
-    : Jug::Algorithm(name) { }
+    CalorimeterHitDigi() = default;
 
-    bool initialize(const dd4hep::Detector* detector)
+    bool initialize()
     {
       // set energy resolution numbers
       for (size_t i = 0; i < u_eRes.value().size() && i < 3; ++i) {
@@ -85,7 +87,7 @@ namespace Jug::Digi {
       // need signal sum
       if (!u_fields.value().empty()) {
         // sanity checks
-        if (!detector) {
+        if (!m_geoSvc()) {
           error() << "Unable to locate Geometry Service. "
                   << "Make sure you have GeoSvc and SimSvc in the right order in the configuration."
                   << std::endl;;
@@ -99,7 +101,7 @@ namespace Jug::Digi {
 
         // get decoders
         try {
-          auto id_desc = detector->readout(m_readout.value()).idSpec();
+          auto id_desc = m_geoSvc()->readout(m_readout.value()).idSpec();
           id_mask      = 0;
           std::vector<std::pair<std::string, int>> ref_fields;
           for (size_t i = 0; i < u_fields.value().size(); ++i) {

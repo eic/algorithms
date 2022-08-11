@@ -3,21 +3,19 @@
 
 #include "PodioOutput.h"
 #include "podio/podioVersion.h"
-#include "GaudiKernel/ISvcLocator.h"
+#include "JugKernel/ISvcLocator.h"
 #include "JugBase/PodioDataSvc.h"
 #include "TFile.h"
 #include "rootutils.h"
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(PodioOutput)
 
 PodioOutput::PodioOutput(const std::string& name, ISvcLocator* svcLoc)
-    : GaudiAlgorithm(name, svcLoc), m_firstEvent(true),
+    : JugAlgorithm(name, svcLoc), m_firstEvent(true),
       m_podioDataSvc(nullptr), m_datatree(nullptr), m_metadatatree(nullptr),
       m_runMDtree(nullptr), m_evtMDtree(nullptr), m_colMDtree(nullptr) {}
 
 StatusCode PodioOutput::initialize() {
-  if (GaudiAlgorithm::initialize().isFailure()) {
+  if (JugAlgorithm::initialize().isFailure()) {
     return StatusCode::FAILURE;
   }
 
@@ -153,7 +151,7 @@ StatusCode PodioOutput::execute() {
  */
 StatusCode PodioOutput::finalize() {
   info() << "Finalizing output algorithm" << endmsg;
-  if (GaudiAlgorithm::finalize().isFailure()) {
+  if (JugAlgorithm::finalize().isFailure()) {
     return StatusCode::FAILURE;
   }
   //// prepare job options metadata ///////////////////////
@@ -161,7 +159,7 @@ StatusCode PodioOutput::finalize() {
   // and write it to file as vector of strings
   debug() << "Preparing job options metadata" << endmsg;
   std::vector<std::string> config_data;
-  const auto& jobOptionsSvc         = Gaudi::svcLocator()->getOptsSvc();
+  const auto& jobOptionsSvc         = Jug::svcLocator()->getOptsSvc();
   const auto& configured_properties = jobOptionsSvc.items();
   for (const auto& per_property : configured_properties) {
     std::stringstream config_stream;
@@ -174,7 +172,7 @@ StatusCode PodioOutput::finalize() {
     config_data.push_back(config_stream.str());
   }
   // Some default components are not captured by the job option service
-  // and have to be traversed like this. Note that Gaudi!577 will improve this.
+  // and have to be traversed like this. Note that Jug!577 will improve this.
   debug() << "Appending default component metadata" << endmsg;
   for (const auto* name : {"ApplicationMgr", "MessageSvc", "NTupleSvc"}) {
     std::stringstream config_stream;
