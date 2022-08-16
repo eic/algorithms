@@ -19,7 +19,7 @@ namespace Jug {
     : m_value( std::forward<TYPE>( value ) ) {
     }
 
-    const ValueType& value() const { return *this; }
+    const ValueType& value() const { return this->m_value; }
     ValueType&       value() { return const_cast<ValueType&>( (const ValueType&)*this ); }
 
   };
