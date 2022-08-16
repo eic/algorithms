@@ -24,10 +24,10 @@
 #include "fmt/ranges.h"
 
 // Event Model related classes
-#include "edm4hep/RawCalorimeterHitCollection.h"
+#include "eicd/RawCalorimeterHitCollection.h"
 #include "edm4hep/SimCalorimeterHitCollection.h"
 
-namespace Jug::Digi {
+namespace algorithms::digi {
 
 bool CalorimeterHitDigi::initialize() {
   // set energy resolution numbers
@@ -82,30 +82,28 @@ bool CalorimeterHitDigi::initialize() {
   return true;
 }
 
-edm4hep::RawCalorimeterHitCollection CalorimeterHitDigi::operator()(const edm4hep::SimCalorimeterHitCollection& input,
-                                                                    const std::function<double()> normdist) const {
+eicd::RawCalorimeterHitCollection CalorimeterHitDigi::operator()(const edm4hep::SimCalorimeterHitCollection& input) const {
   if (!u_fields.value().empty()) {
-    return signal_sum_digi(input, normdist);
+    return signal_sum_digi(input);
   } else {
-    return single_hits_digi(input, normdist);
+    return single_hits_digi(input);
   }
 }
 
-edm4hep::RawCalorimeterHitCollection
-CalorimeterHitDigi::single_hits_digi(const edm4hep::SimCalorimeterHitCollection& simhits,
-                                     const std::function<double()> normdist) const {
-  edm4hep::RawCalorimeterHitCollection rawhits;
+eicd::RawCalorimeterHitCollection
+CalorimeterHitDigi::single_hits_digi(const edm4hep::SimCalorimeterHitCollection& simhits) const {
+  eicd::RawCalorimeterHitCollection rawhits;
 
   for (const auto& ahit : simhits) {
     // Note: juggler internal unit of energy is GeV
     const double eDep = ahit.getEnergy();
 
     // apply additional calorimeter noise to corrected energy deposit
-    const double eResRel = (eDep > 1e-6) ? normdist() * std::sqrt(std::pow(eRes[0] / std::sqrt(eDep), 2) +
-                                                                  std::pow(eRes[1], 2) + std::pow(eRes[2] / (eDep), 2))
+    const double eResRel = (eDep > 1e-6) ? m_normDist() * std::sqrt(std::pow(eRes[0] / std::sqrt(eDep), 2) +
+                                                                    std::pow(eRes[1], 2) + std::pow(eRes[2] / (eDep), 2))
                                          : 0;
 
-    const double ped = m_pedMeanADC.value() + normdist() * m_pedSigmaADC.value();
+    const double ped = m_pedMeanADC.value() + m_normDist() * m_pedSigmaADC.value();
     const long long adc =
         std::llround(ped + m_corrMeanScale.value() * eDep * (1. + eResRel) / dyRangeADC * m_capADC.value());
 
@@ -115,19 +113,18 @@ CalorimeterHitDigi::single_hits_digi(const edm4hep::SimCalorimeterHitCollection&
         time = c.getTime();
       }
     }
-    const long long tdc = std::llround((time + normdist() * tRes) * stepTDC);
+    const long long tdc = std::llround((time + m_normDist() * tRes) * stepTDC);
 
-    edm4hep::RawCalorimeterHit rawhit(ahit.getCellID(), (adc > m_capADC.value() ? m_capADC.value() : adc), tdc);
+    eicd::RawCalorimeterHit rawhit(ahit.getCellID(), (adc > m_capADC.value() ? m_capADC.value() : adc), tdc);
     rawhits->push_back(rawhit);
   }
 
   return rawhits;
 }
 
-edm4hep::RawCalorimeterHitCollection
-CalorimeterHitDigi::signal_sum_digi(const edm4hep::SimCalorimeterHitCollection& simhits,
-                                    const std::function<double()> normdist) const {
-  edm4hep::RawCalorimeterHitCollection rawhits;
+eicd::RawCalorimeterHitCollection
+CalorimeterHitDigi::signal_sum_digi(const edm4hep::SimCalorimeterHitCollection& simhits) const {
+  eicd::RawCalorimeterHitCollection rawhits;
 
   // find the hits that belong to the same group (for merging)
   std::unordered_map<long long, std::vector<edm4hep::SimCalorimeterHit>> merge_map;
@@ -163,17 +160,17 @@ CalorimeterHitDigi::signal_sum_digi(const edm4hep::SimCalorimeterHitCollection& 
     double eResRel = 0.;
     // safety check
     if (edep > 1e-6) {
-      eResRel = normdist() * eRes[0] / std::sqrt(edep) + normdist() * eRes[1] + normdist() * eRes[2] / edep;
+      eResRel = m_normDist() * eRes[0] / std::sqrt(edep) + m_normDist() * eRes[1] + m_normDist() * eRes[2] / edep;
     }
-    double ped             = m_pedMeanADC.value() + normdist() * m_pedSigmaADC.value();
+    double ped             = m_pedMeanADC.value() + m_normDist() * m_pedSigmaADC.value();
     unsigned long long adc = std::llround(ped + edep * (1. + eResRel) / dyRangeADC * m_capADC.value());
-    unsigned long long tdc = std::llround((time + normdist() * tRes) * stepTDC);
+    unsigned long long tdc = std::llround((time + m_normDist() * tRes) * stepTDC);
 
-    edm4hep::RawCalorimeterHit rawhit(id, (adc > m_capADC.value() ? m_capADC.value() : adc), tdc);
+    eicd::RawCalorimeterHit rawhit(id, (adc > m_capADC.value() ? m_capADC.value() : adc), tdc);
     rawhits.push_back(rawhit);
   }
 
   return rawhits;
 }
 
-} // namespace Jug::Digi
+} // namespace algorithms::digi
