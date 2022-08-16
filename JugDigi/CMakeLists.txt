@@ -6,7 +6,17 @@
 ################################################################################
 
 file(GLOB JugDigiPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
-add_library(JugDigiPlugins ${JugDigiPlugins_sources})
+set(JugDigiPlugins_sources
+  src/components/CalorimeterHitDigi.cpp
+  src/components/CalorimeterBirksCorr.cpp
+)
+set(JugDigiPlugins_headers
+  JugDigi/CalorimeterHitDigi.h
+  JugDigi/CalorimeterBirksCorr.h
+)
+add_library(JugDigiPlugins SHARED "${JugDigiPlugins_sources}")
+set_target_properties(JugDigiPlugins
+  PROPERTIES PUBLIC_HEADER "${JugDigiPlugins_headers}")
 target_link_libraries(JugDigiPlugins
   ROOT::Core ROOT::RIO ROOT::Tree
   EDM4HEP::edm4hep
