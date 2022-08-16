@@ -46,6 +46,9 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   add_compile_options(-Wall -Wextra -Werror)
 endif()
 
+# Use GNU install dirs
+include(GNUInstallDirs)
+
 find_package(Microsoft.GSL CONFIG)
 
 find_package(EICD REQUIRED)
