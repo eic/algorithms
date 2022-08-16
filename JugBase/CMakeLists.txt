@@ -9,10 +9,7 @@ file(GLOB JugBasePlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
 set(JugBasePlugins_sources
   src/components/Algorithm.cpp
 )
-set(JugBasePlugins_headers
-  Jug/Algorithm.h
-  Jug/Property.h
-)
+file(GLOB JugBasePlugins_headers CONFIGURE_DEPENDS JugBase/*.h)
 add_library(JugBasePlugins SHARED "${JugBasePlugins_sources}")
 set_target_properties(JugBasePlugins
   PROPERTIES PUBLIC_HEADER "${JugBasePlugins_headers}")

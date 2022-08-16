@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Jug::Base {
+namespace algorithms::base {
 
   /** Simple particle data.
    *
@@ -10,4 +10,4 @@ namespace Jug::Base {
     int         charge;
     double      mass; //std::string name;
   };
-} // namespace Jug::Base
+} // namespace algorithms::base

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Jug {
+namespace algorithms {
 
   template <class FUNCTIONAL>
   class Service: public std::function<FUNCTIONAL> {
@@ -10,4 +10,4 @@ namespace Jug {
     Service() = default;
   };
 
-} // namespace Jug
+} // namespace algorithms

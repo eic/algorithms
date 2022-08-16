@@ -3,7 +3,7 @@
 #include <functional>
 #include <string>
 
-namespace Jug {
+namespace algorithms {
 
   class ISvcLocator;
 
@@ -49,7 +49,7 @@ namespace Jug {
 
 
   public:
-    JugAlgorithm(const std::string& name, ISvcLocator* svc)
+    JugAlgorithm(const std::string& name = "", ISvcLocator* svc = nullptr)
     : m_name(name),m_svc(svc) {
     }
 
@@ -62,4 +62,4 @@ namespace Jug {
 
   };
 
-} // namespace Jug
+} // namespace algorithms

@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Jug {
+namespace algorithms {
 
   template <class TYPE>
   class Property {
@@ -24,4 +24,4 @@ namespace Jug {
 
   };
 
-} // namespace Jug
+} // namespace algorithms
