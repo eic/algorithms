@@ -76,7 +76,7 @@ add_definitions("-DActs_VERSION_PATCH=${Acts_VERSION_PATCH}")
 find_library(genfit2 genfit2 /usr/local/lib REQUIRED)
 find_path(genfit2_INCLUDE_DIR NAMES GFGbl.h PATHS /usr/local/include ${genfit2}/../include REQUIRED)
 
-#add_subdirectory(JugBase)
+add_subdirectory(JugBase)
 add_subdirectory(JugDigi)
 #add_subdirectory(JugFast)
 #add_subdirectory(JugPID)
