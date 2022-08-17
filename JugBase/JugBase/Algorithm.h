@@ -5,7 +5,8 @@
 
 namespace algorithms {
 
-  class ISvcLocator;
+  class PropertyBase;
+  class ServiceBase;
 
   class StatusCode {
     public:
@@ -24,10 +25,25 @@ namespace algorithms {
       Value m_value;
   };
 
-  class JugAlgorithm {
+  class AlgorithmBase {
+  private:
+    std::vector<std::pair<std::string, PropertyBase*>> m_properties;
+    std::vector<std::pair<std::string, ServiceBase*>> m_services;
+  public:
+    AlgorithmBase() = default;
+    void registerProperty(PropertyBase* property, const std::string& name) {
+      m_properties.push_back(std::make_pair(name, property));
+    }
+    void registerService(ServiceBase* service, const std::string& name) {
+      m_services.push_back(std::make_pair(name, service));
+    }
+
+  };
+
+  template<typename Out, typename In>
+  class JugAlgorithm : public AlgorithmBase {
   private:
     std::string m_name;
-    ISvcLocator* m_svc;
 
     static std::function<std::ostream&()> m_debug;
     static std::function<std::ostream&()> m_info;
@@ -47,11 +63,12 @@ namespace algorithms {
       m_error = error;
     }
 
-
   public:
-    JugAlgorithm(const std::string& name = "", ISvcLocator* svc = nullptr)
-    : m_name(name),m_svc(svc) {
+    JugAlgorithm(const std::string& name = "")
+    : m_name(name) {
     }
+
+    virtual Out operator()(const In&) const = 0;
 
   protected:
     static std::ostream& debug() { return m_debug(); };
