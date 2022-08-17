@@ -13,8 +13,8 @@
 #include "DDSegmentation/BitFieldCoder.h"
 
 // EDM4hep
-#include "eicd/RawCalorimeterHitCollection.h"
 #include "edm4hep/SimCalorimeterHitCollection.h"
+#include "eicd/RawCalorimeterHitCollection.h"
 
 namespace algorithms::digi {
 
@@ -23,9 +23,7 @@ namespace algorithms::digi {
  * \ingroup digi
  * \ingroup calorimetry
  */
-// FIXME should be using JugAlgorithm template
-// class CalorimeterHitDigi : JugAlgorithm<eicd::RawCalorimeterHitCollection(edm4hep::SimCalorimeterHitCollection)>
-class CalorimeterHitDigi : JugAlgorithm {
+class CalorimeterHitDigi final : public JugAlgorithm<eicd::RawCalorimeterHitCollection, edm4hep::SimCalorimeterHitCollection> {
 
 public:
   // additional smearing resolutions
@@ -54,10 +52,10 @@ public:
   algorithms::Property<std::string> m_readout{this, "readoutClass", ""};
 
   // Geometry service
-  algorithms::Service<dd4hep::Detector*(void)> m_geoSvc;
+  algorithms::Service<dd4hep::Detector*(void)> m_geoSvc{this, "geoSvc"};
 
   // Random service
-  algorithms::Service<double()> m_normDist;
+  algorithms::Service<double()> m_normDist{this, "normDist"};
 
   // unitless counterparts of inputs FIXME remove
   double dyRangeADC{0}, stepTDC{0}, tRes{0}, eRes[3] = {0., 0., 0.};

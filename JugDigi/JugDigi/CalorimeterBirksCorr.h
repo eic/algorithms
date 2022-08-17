@@ -17,7 +17,7 @@ namespace algorithms::digi {
  * \ingroup digi
  * \ingroup calorimetry
  */
-class CalorimeterBirksCorr : public JugAlgorithm {
+class CalorimeterBirksCorr final : public JugAlgorithm<edm4hep::SimCalorimeterHitCollection, edm4hep::SimCalorimeterHitCollection> {
 public:
   CalorimeterBirksCorr() = default;
 
