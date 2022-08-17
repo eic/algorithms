@@ -10,13 +10,13 @@
 #include <bitset>
 #include <unordered_map>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -31,7 +31,7 @@
 #include "eicd/CalorimeterHit.h"
 #include "eicd/CalorimeterHitCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -44,18 +44,18 @@ namespace Jug::Reco {
    *
    * \ingroup reco
    */
-  class ImagingPixelDataSorter : public GaudiAlgorithm {
+  class ImagingPixelDataSorter : public JugAlgorithm {
   private:
-    Gaudi::Property<int>                        m_nLayers{this, "numberOfLayers", 9};
-    Gaudi::Property<int>                        m_nHits{this, "numberOfHits", 50};
+    Jug::Property<int>                        m_nLayers{this, "numberOfLayers", 9};
+    Jug::Property<int>                        m_nHits{this, "numberOfHits", 50};
     DataHandle<eicd::CalorimeterHitCollection>   m_inputHitCollection{"inputHitCollection",
-                                                                     Gaudi::DataHandle::Reader, this};
+                                                                     Jug::DataHandle::Reader, this};
     DataHandle<eicd::CalorimeterHitCollection>   m_outputHitCollection{"outputHitCollection",
-                                                                      Gaudi::DataHandle::Writer, this};
+                                                                      Jug::DataHandle::Writer, this};
 
   public:
     ImagingPixelDataSorter(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc)
+      : JugAlgorithm(name, svcLoc)
     {
       declareProperty("inputHitCollection", m_inputHitCollection, "");
       declareProperty("outputHitCollection", m_outputHitCollection, "");
@@ -63,7 +63,7 @@ namespace Jug::Reco {
 
     StatusCode initialize() override
     {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
 
@@ -116,7 +116,5 @@ namespace Jug::Reco {
 
   }; // class ImagingPixelDataSorter
 
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(ImagingPixelDataSorter)
 
 } // namespace Jug::Reco

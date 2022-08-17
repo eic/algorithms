@@ -4,10 +4,10 @@
 // Deprecated algorithm, as we can now properly store input collections in our output
 
 #include <algorithm>
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "Gaudi/Algorithm.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/JugTool.h"
+#include "Jug/Algorithm.h"
 
 // FCCSW
 #include "JugBase/DataHandle.h"
@@ -26,16 +26,16 @@ namespace Jug::Base {
      * https://github.com/AIDASoft/podio/issues/103
      */
     template<typename T_IN, typename T_OUT>
-    class InputCopier : public GaudiAlgorithm {
+    class InputCopier : public JugAlgorithm {
     public:
-      InputCopier(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc)
+      InputCopier(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc)
       {
         declareProperty("inputCollection", m_inputHitCollection, "MCParticles");
         declareProperty("outputCollection", m_outputHitCollection, "genparticles");
       }
       StatusCode initialize() override
       {
-        if (GaudiAlgorithm::initialize().isFailure()) {
+        if (JugAlgorithm::initialize().isFailure()) {
           return StatusCode::FAILURE;
         }
         warning() << "DEPRECATED ALGORITHM, no need to use this anymore, we can do a proper straight passthrough from input to output." << endmsg;
@@ -56,20 +56,14 @@ namespace Jug::Base {
         return StatusCode::SUCCESS;
       }
 
-      DataHandle<T_IN> m_inputHitCollection{"MCParticles", Gaudi::DataHandle::Reader, this};
-      DataHandle<T_OUT> m_outputHitCollection{"genparticles", Gaudi::DataHandle::Writer, this};
+      DataHandle<T_IN> m_inputHitCollection{"MCParticles", Jug::DataHandle::Reader, this};
+      DataHandle<T_OUT> m_outputHitCollection{"genparticles", Jug::DataHandle::Writer, this};
     };
 
     using CalorimeterColCopier = InputCopier<edm4hep::SimCalorimeterHitCollection, edm4hep::SimCalorimeterHitCollection>;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    DECLARE_COMPONENT(CalorimeterColCopier)
 
     using TrackerColCopier = InputCopier<edm4hep::SimTrackerHitCollection, edm4hep::SimTrackerHitCollection>;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    DECLARE_COMPONENT(TrackerColCopier)
 
     using MCCopier = InputCopier<edm4hep::MCParticleCollection, edm4hep::MCParticleCollection>;
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    DECLARE_COMPONENT(MCCopier)
 
 } // namespace Jug::Base

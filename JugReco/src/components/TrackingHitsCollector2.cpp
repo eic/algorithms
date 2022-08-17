@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2022 Whitney Armstrong, Sylvester Joosten, Wouter Deconinck
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -21,16 +21,16 @@ namespace Jug::Reco {
      *
      * \ingroup reco
      */
-    class TrackingHitsCollector2 : public GaudiAlgorithm {
+    class TrackingHitsCollector2 : public JugAlgorithm {
     private:
-      Gaudi::Property<std::vector<std::string>> m_inputTrackingHits{this, "inputTrackingHits", {},"Tracker hits to be aggregated"};
-      DataHandle<eicd::TrackerHitCollection> m_trackingHits{"trackingHits", Gaudi::DataHandle::Writer, this};
+      Jug::Property<std::vector<std::string>> m_inputTrackingHits{this, "inputTrackingHits", {},"Tracker hits to be aggregated"};
+      DataHandle<eicd::TrackerHitCollection> m_trackingHits{"trackingHits", Jug::DataHandle::Writer, this};
 
       std::vector<DataHandle<eicd::TrackerHitCollection>*> m_hitCollections;
 
     public:
       TrackingHitsCollector2(const std::string& name, ISvcLocator* svcLoc)
-          : GaudiAlgorithm(name, svcLoc)
+          : JugAlgorithm(name, svcLoc)
       {
         declareProperty("trackingHits", m_trackingHits, "output hits combined into single collection");
       }
@@ -41,12 +41,12 @@ namespace Jug::Reco {
       }
 
       StatusCode initialize() override {
-        if (GaudiAlgorithm::initialize().isFailure()) {
+        if (JugAlgorithm::initialize().isFailure()) {
           return StatusCode::FAILURE;
         }
         for (auto colname : m_inputTrackingHits) {
           debug() << "initializing collection: " << colname  << endmsg;
-          m_hitCollections.push_back(new DataHandle<eicd::TrackerHitCollection>{colname, Gaudi::DataHandle::Reader, this});
+          m_hitCollections.push_back(new DataHandle<eicd::TrackerHitCollection>{colname, Jug::DataHandle::Reader, this});
         }
         return StatusCode::SUCCESS;
       }
@@ -70,7 +70,5 @@ namespace Jug::Reco {
         return StatusCode::SUCCESS;
       }
     };
-    // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-    DECLARE_COMPONENT(TrackingHitsCollector2)
 
 } // namespace Jug::Reco

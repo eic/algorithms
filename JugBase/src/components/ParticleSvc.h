@@ -6,7 +6,7 @@
 
 #include <map>
 
-#include "GaudiKernel/Service.h"
+#include "JugKernel/Service.h"
 
 #include "JugBase/IParticleSvc.h"
 

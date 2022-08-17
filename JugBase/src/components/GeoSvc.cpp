@@ -2,7 +2,7 @@
 // Copyright (C) 2022 Whitney Armstrong, Wouter Deconinck
 
 #include "GeoSvc.h"
-#include "GaudiKernel/Service.h"
+#include "JugKernel/Service.h"
 //#include "GeoConstruction.h"
 #include "TGeoManager.h"
 
@@ -76,10 +76,8 @@ void draw_surfaces(std::shared_ptr<const Acts::TrackingGeometry> trk_geo, const 
   os.close();
 }
 
-using namespace Gaudi;
+using namespace Jug;
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(GeoSvc)
 
 GeoSvc::GeoSvc(const std::string& name, ISvcLocator* svc)
     : base_class(name, svc)

@@ -3,14 +3,14 @@
 
 #include <cmath>
 
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "Acts/Definitions/Common.hpp"
 #include "Acts/Definitions/Units.hpp"
@@ -23,7 +23,7 @@
 #include "eicd/TrackerHitCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -35,26 +35,26 @@ namespace Jug::Reco {
  *
  * \ingroup tracking
  */
-class TrackParamVertexClusterInit : public GaudiAlgorithm {
+class TrackParamVertexClusterInit : public JugAlgorithm {
 private:
   using Clusters   = eicd::ClusterCollection;
   using VertexHits = eicd::TrackerHitCollection;
 
-  DataHandle<VertexHits> m_inputVertexHits{"inputVertexHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<Clusters> m_inputClusters{"inputClusters", Gaudi::DataHandle::Reader, this};
+  DataHandle<VertexHits> m_inputVertexHits{"inputVertexHits", Jug::DataHandle::Reader, this};
+  DataHandle<Clusters> m_inputClusters{"inputClusters", Jug::DataHandle::Reader, this};
   DataHandle<TrackParametersContainer> m_outputInitialTrackParameters{"outputInitialTrackParameters",
-                                                                      Gaudi::DataHandle::Writer, this};
-  Gaudi::Property<double> m_maxHitRadius{this, "maxHitRadius", 40.0 * mm};
+                                                                      Jug::DataHandle::Writer, this};
+  Jug::Property<double> m_maxHitRadius{this, "maxHitRadius", 40.0 * mm};
 
 public:
-  TrackParamVertexClusterInit(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  TrackParamVertexClusterInit(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputVertexHits", m_inputVertexHits, "Vertex tracker hits");
     declareProperty("inputClusters", m_inputClusters, "Input clusters");
     declareProperty("outputInitialTrackParameters", m_outputInitialTrackParameters, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -131,7 +131,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(TrackParamVertexClusterInit)
 
 } // namespace Jug::Reco

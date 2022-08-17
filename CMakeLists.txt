@@ -3,10 +3,7 @@
 
 cmake_minimum_required(VERSION 3.19)
 
-# CMP0074: find_package() uses <PackageName>_ROOT variables
-cmake_policy(SET CMP0074 NEW)
-
-project(Juggler VERSION 4.3.0)
+project(algorithms VERSION 0.0.1)
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "")
 if(NOT CMAKE_CXX_STANDARD MATCHES "17|20")
@@ -49,6 +46,9 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   add_compile_options(-Wall -Wextra -Werror)
 endif()
 
+# Use GNU install dirs
+include(GNUInstallDirs)
+
 find_package(Microsoft.GSL CONFIG)
 
 find_package(EICD REQUIRED)
@@ -76,9 +76,41 @@ add_definitions("-DActs_VERSION_PATCH=${Acts_VERSION_PATCH}")
 find_library(genfit2 genfit2 /usr/local/lib REQUIRED)
 find_path(genfit2_INCLUDE_DIR NAMES GFGbl.h PATHS /usr/local/include ${genfit2}/../include REQUIRED)
 
-#add_subdirectory(JugBase)
+add_subdirectory(JugBase)
 add_subdirectory(JugDigi)
 #add_subdirectory(JugFast)
 #add_subdirectory(JugPID)
 #add_subdirectory(JugReco)
 #add_subdirectory(JugTrack)
+
+
+# -------------------------
+# install library config
+include(CMakePackageConfigHelpers)
+
+# Install and export targets
+install(EXPORT ${PROJECT_NAME}Targets
+  FILE ${PROJECT_NAME}Targets.cmake
+  NAMESPACE ${PROJECT_NAME}::
+  DESTINATION lib/${PROJECT_NAME}
+  )
+
+set(TARGETS_INSTALL_PATH lib/${PROJECT_NAME}/${PROJECT_NAME}Targets.cmake)
+
+configure_package_config_file(
+  cmake/${PROJECT_NAME}Config.cmake.in  
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  INSTALL_DESTINATION lib/${PROJECT_NAME}
+  PATH_VARS TARGETS_INSTALL_PATH
+  )
+
+write_basic_package_version_file("${PROJECT_NAME}ConfigVersion.cmake"
+  VERSION ${VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+  DESTINATION lib/${PROJECT_NAME}
+)

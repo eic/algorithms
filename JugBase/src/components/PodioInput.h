@@ -4,7 +4,7 @@
 #ifndef JUGBASE_PODIOINPUT_H
 #define JUGBASE_PODIOINPUT_H
 // Gaaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
+#include "JugAlg/JugAlgorithm.h"
 
 // STL
 #include <string>
@@ -21,7 +21,7 @@ class PodioDataSvc;
  *  @author J. Lingemann
  */
 
-class PodioInput : public GaudiAlgorithm {
+class PodioInput : public JugAlgorithm {
 
 public:
   /// Constructor.
@@ -35,7 +35,7 @@ public:
 
 private:
   /// Name of collections to read. Set by option collections (this is temporary)
-  Gaudi::Property<std::vector<std::string>> m_collectionNames{this, "collections", {}, "Places of collections to read"};
+  Jug::Property<std::vector<std::string>> m_collectionNames{this, "collections", {}, "Places of collections to read"};
   /// Collection IDs (retrieved with CollectionIDTable from ROOT file, using collection names)
   std::vector<int> m_collectionIDs;
   /// Data service: needed to register objects and get collection IDs. Just an observing pointer.

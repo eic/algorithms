@@ -2,14 +2,14 @@
 // Copyright (C) 2022 Whitney Armstrong, Wouter Deconinck, Sylvester Joosten
 
 #include <cmath>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -43,32 +43,32 @@ namespace Jug::Reco {
    *  TrackParmetersContainer
    *  \ingroup tracking
    */
-  class TrackParamTruthInit : public GaudiAlgorithm {
+  class TrackParamTruthInit : public JugAlgorithm {
   private:
-    DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Gaudi::DataHandle::Reader,
+    DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"inputMCParticles", Jug::DataHandle::Reader,
                                                                     this};
     DataHandle<TrackParametersContainer>         m_outputInitialTrackParameters{"outputInitialTrackParameters",
-                                                                        Gaudi::DataHandle::Writer, this};
+                                                                        Jug::DataHandle::Writer, this};
     
     // selection settings
-    Gaudi::Property<double> m_maxVertexX{this, "maxVertexX", 80. * Gaudi::Units::mm};
-    Gaudi::Property<double> m_maxVertexY{this, "maxVertexY", 80. * Gaudi::Units::mm};
-    Gaudi::Property<double> m_maxVertexZ{this, "maxVertexZ", 200. * Gaudi::Units::mm};
-    Gaudi::Property<double> m_minMomentum{this, "minMomentum", 100. * Gaudi::Units::MeV};
-    Gaudi::Property<double> m_maxEtaForward{this, "maxEtaForward", 4.0};
-    Gaudi::Property<double> m_maxEtaBackward{this, "maxEtaBackward", 4.1};
+    Jug::Property<double> m_maxVertexX{this, "maxVertexX", 80. * Jug::Units::mm};
+    Jug::Property<double> m_maxVertexY{this, "maxVertexY", 80. * Jug::Units::mm};
+    Jug::Property<double> m_maxVertexZ{this, "maxVertexZ", 200. * Jug::Units::mm};
+    Jug::Property<double> m_minMomentum{this, "minMomentum", 100. * Jug::Units::MeV};
+    Jug::Property<double> m_maxEtaForward{this, "maxEtaForward", 4.0};
+    Jug::Property<double> m_maxEtaBackward{this, "maxEtaBackward", 4.1};
 
     SmartIF<IParticleSvc> m_pidSvc;
 
   public:
     TrackParamTruthInit(const std::string& name, ISvcLocator* svcLoc)
-        : GaudiAlgorithm(name, svcLoc) {
+        : JugAlgorithm(name, svcLoc) {
       declareProperty("inputMCParticles", m_inputMCParticles, "");
       declareProperty("outputInitialTrackParameters", m_outputInitialTrackParameters, "");
     }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       IRndmGenSvc* randSvc = svc<IRndmGenSvc>("RndmGenSvc", true);
@@ -102,9 +102,9 @@ namespace Jug::Reco {
         }
 
         // require close to interaction vertex
-        if (abs(part.getVertex().x) * Gaudi::Units::mm > m_maxVertexX
-         || abs(part.getVertex().y) * Gaudi::Units::mm > m_maxVertexY
-         || abs(part.getVertex().z) * Gaudi::Units::mm > m_maxVertexZ) {
+        if (abs(part.getVertex().x) * Jug::Units::mm > m_maxVertexX
+         || abs(part.getVertex().y) * Jug::Units::mm > m_maxVertexY
+         || abs(part.getVertex().z) * Jug::Units::mm > m_maxVertexZ) {
           if (msgLevel(MSG::DEBUG)) {
             debug() << "ignoring particle with vs = " << part.getVertex() << " mm" << endmsg;
           }
@@ -114,7 +114,7 @@ namespace Jug::Reco {
         // require minimum momentum
         const auto& p = part.getMomentum();
         const auto pmag = std::hypot(p.x, p.y, p.z);
-        if (pmag * Gaudi::Units::GeV < m_minMomentum) {
+        if (pmag * Jug::Units::GeV < m_minMomentum) {
           if (msgLevel(MSG::DEBUG)) {
             debug() << "ignoring particle with p = " << pmag << " GeV" << endmsg;
           }
@@ -186,7 +186,5 @@ namespace Jug::Reco {
       return StatusCode::SUCCESS;
     }
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TrackParamTruthInit)
 
 } // namespace Jug::reco

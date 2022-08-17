@@ -1,3 +1,8 @@
+# Installed in source as prefix
+/include/
+/lib/
+/bin/
+
 # Compiled Object files
 *.slo
 *.lo

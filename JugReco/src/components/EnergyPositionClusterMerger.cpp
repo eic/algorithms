@@ -5,12 +5,12 @@
 #include <numbers>
 
 #include <fmt/format.h>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -18,7 +18,7 @@
 #include "eicd/ClusterCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -34,23 +34,23 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class EnergyPositionClusterMerger : public GaudiAlgorithm {
+class EnergyPositionClusterMerger : public JugAlgorithm {
 private:
   // Input
-  DataHandle<eicd::ClusterCollection> m_energyClusters{"energyClusters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ClusterCollection> m_positionClusters{"positionClusters", Gaudi::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_energyClusters{"energyClusters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_positionClusters{"positionClusters", Jug::DataHandle::Reader, this};
   // Output
-  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusters", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusters", Jug::DataHandle::Writer, this};
   // Negative values mean the tolerance check is disabled
-  Gaudi::Property<double> m_zToleranceUnits{this, "zTolerance", -1 * cm};
-  Gaudi::Property<double> m_phiToleranceUnits{this, "phiTolerance", 20 * degree};
-  Gaudi::Property<double> m_energyRelTolerance{this, "energyRelTolerance", 0.3};
+  Jug::Property<double> m_zToleranceUnits{this, "zTolerance", -1 * cm};
+  Jug::Property<double> m_phiToleranceUnits{this, "phiTolerance", 20 * degree};
+  Jug::Property<double> m_energyRelTolerance{this, "energyRelTolerance", 0.3};
   // Unitless (GeV/mm/ns/rad) versions of these tolerances
   double m_zTolerance{0};
   double m_phiTolerance{0};
 
 public:
-  EnergyPositionClusterMerger(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  EnergyPositionClusterMerger(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("energyClusters", m_energyClusters, "Cluster collection with good energy precision");
     declareProperty("positionClusters", m_positionClusters, "Cluster collection with good position precision");
     declareProperty("outputClusters", m_outputClusters, "");
@@ -136,7 +136,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(EnergyPositionClusterMerger)
 
 } // namespace Jug::Reco

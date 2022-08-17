@@ -6,11 +6,8 @@
 ################################################################################
 
 file(GLOB JugTrackPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
-gaudi_add_module(JugTrackPlugins
-  SOURCES
-  ${JugTrackPlugins_sources}
-  LINK
-  Gaudi::GaudiAlgLib Gaudi::GaudiKernel
+add_library(JugTrackPlugins ${JugTrackPlugins_sources})
+target_link_libraries(JugTrackPlugins
   JugBase
   ROOT::Core ROOT::RIO ROOT::Tree
   EDM4HEP::edm4hep

@@ -5,12 +5,18 @@
 # Package: JugDigi
 ################################################################################
 
-#file(GLOB JugDigiPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
+file(GLOB JugDigiPlugins_sources CONFIGURE_DEPENDS src/components/*.cpp)
 set(JugDigiPlugins_sources
   src/components/CalorimeterHitDigi.cpp
+  src/components/CalorimeterBirksCorr.cpp
 )
-message(STATUS "${JugDigiPlugins_sources}")
-add_library(JugDigiPlugins ${JugDigiPlugins_sources})
+set(JugDigiPlugins_headers
+  JugDigi/CalorimeterHitDigi.h
+  JugDigi/CalorimeterBirksCorr.h
+)
+add_library(JugDigiPlugins SHARED "${JugDigiPlugins_sources}")
+set_target_properties(JugDigiPlugins
+  PROPERTIES PUBLIC_HEADER "${JugDigiPlugins_headers}")
 target_link_libraries(JugDigiPlugins
   ROOT::Core ROOT::RIO ROOT::Tree
   EDM4HEP::edm4hep
@@ -23,3 +29,10 @@ target_include_directories(JugDigiPlugins PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_options(JugDigiPlugins PRIVATE -Wno-suggest-override)
+
+install(TARGETS JugDigiPlugins
+  EXPORT ${PROJECT_NAME}Targets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/JugDigi
+)

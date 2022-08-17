@@ -2,12 +2,12 @@
 // Copyright (C) 2022 Whitney Armstrong
 
 #include <cmath>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -24,15 +24,15 @@ namespace Jug::Reco {
  *
  *  \ingroup tracking
  */
-class ProtoTrackMatching : public GaudiAlgorithm {
+class ProtoTrackMatching : public JugAlgorithm {
 private:
-  DataHandle<eicd::TrackerHitCollection> m_inputTrackerHits{"inputTrackerHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<TrackParametersContainer> m_initialTrackParameters{"initialTrackParameters", Gaudi::DataHandle::Reader, this};
-  DataHandle<ProtoTrackContainer> m_inputProtoTracks{"inputProtoTracks", Gaudi::DataHandle::Reader, this};
-  DataHandle<ProtoTrackContainer> m_outputProtoTracks{"matchedProtoTracks", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::TrackerHitCollection> m_inputTrackerHits{"inputTrackerHits", Jug::DataHandle::Reader, this};
+  DataHandle<TrackParametersContainer> m_initialTrackParameters{"initialTrackParameters", Jug::DataHandle::Reader, this};
+  DataHandle<ProtoTrackContainer> m_inputProtoTracks{"inputProtoTracks", Jug::DataHandle::Reader, this};
+  DataHandle<ProtoTrackContainer> m_outputProtoTracks{"matchedProtoTracks", Jug::DataHandle::Writer, this};
 
 public:
-  ProtoTrackMatching(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ProtoTrackMatching(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputTrackerHits",     m_inputTrackerHits,     "");
     declareProperty("initialTrackParameters", m_initialTrackParameters, "");
     declareProperty("inputProtoTracks",       m_inputProtoTracks,       "");
@@ -40,7 +40,7 @@ public:
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     return StatusCode::SUCCESS;
@@ -99,7 +99,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ProtoTrackMatching)
 
 } // namespace Jug::Reco

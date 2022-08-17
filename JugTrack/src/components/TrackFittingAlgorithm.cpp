@@ -4,13 +4,13 @@
 //
 #include "TrackFittingAlgorithm.h"
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/SurfaceManager.h"
@@ -49,7 +49,7 @@ namespace Jug::Reco {
   using namespace Acts::UnitLiterals;
 
   TrackFittingAlgorithm::TrackFittingAlgorithm(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc)
+      : JugAlgorithm(name, svcLoc)
   {
     declareProperty("inputSourceLinks", m_inputSourceLinks, "");
     declareProperty("initialTrackParameters", m_initialTrackParameters, "");
@@ -61,7 +61,7 @@ namespace Jug::Reco {
 
   StatusCode TrackFittingAlgorithm::initialize()
   {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_geoSvc = service("GeoSvc");
@@ -286,8 +286,5 @@ namespace Jug::Reco {
     return StatusCode::SUCCESS;
   }
 
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TrackFittingAlgorithm)
 
 } // namespace Jug::Reco

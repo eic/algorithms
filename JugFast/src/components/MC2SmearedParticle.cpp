@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2022 Sylvester Joosten, Whitney Armstrong, Wouter Deconinck
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 #include <algorithm>
 #include <cmath>
 
@@ -17,21 +17,21 @@
 
 namespace Jug::Fast {
 
-class MC2SmearedParticle : public GaudiAlgorithm {
+class MC2SmearedParticle : public JugAlgorithm {
 private:
-  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Gaudi::DataHandle::Reader, this};
+  DataHandle<edm4hep::MCParticleCollection> m_inputMCParticles{"MCParticles", Jug::DataHandle::Reader, this};
   DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"SmearedReconstructedParticles",
-                                                                      Gaudi::DataHandle::Writer, this};
+                                                                      Jug::DataHandle::Writer, this};
   Rndm::Numbers m_gaussDist;
-  Gaudi::Property<double> m_smearing{this, "smearing", 0.01 /* 1 percent*/};
+  Jug::Property<double> m_smearing{this, "smearing", 0.01 /* 1 percent*/};
 
 public:
-  MC2SmearedParticle(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  MC2SmearedParticle(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputParticles", m_inputMCParticles, "MCParticles");
     declareProperty("outputParticles", m_outputParticles, "SmearedReconstructedParticles");
   }
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -93,7 +93,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(MC2SmearedParticle)
 
 } // namespace Jug::Fast

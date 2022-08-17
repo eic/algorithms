@@ -10,13 +10,13 @@
 
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -30,7 +30,7 @@
 #include "eicd/PMTHitCollection.h"
 #include "eicd/RingImageCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 using namespace Eigen;
 
 namespace Jug::Reco {
@@ -39,30 +39,30 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class PhotoRingClusters : public GaudiAlgorithm {
+class PhotoRingClusters : public JugAlgorithm {
 private:
-  DataHandle<eicd::PMTHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::RingImageCollection> m_outputClusterCollection{"outputClusterCollection", Gaudi::DataHandle::Writer,
+  DataHandle<eicd::PMTHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::RingImageCollection> m_outputClusterCollection{"outputClusterCollection", Jug::DataHandle::Writer,
                                                                   this};
   // @TODO
   // A more realistic way is to have tracker info as the input to determine how much clusters should be found
-  Gaudi::Property<int> m_nRings{this, "nRings", 1};
-  Gaudi::Property<int> m_nIters{this, "nIters", 1000};
-  Gaudi::Property<double> m_q{this, "q", 2.0};
-  Gaudi::Property<double> m_eps{this, "epsilon", 1e-4};
-  Gaudi::Property<double> m_minNpe{this, "minNpe", 0.5};
+  Jug::Property<int> m_nRings{this, "nRings", 1};
+  Jug::Property<int> m_nIters{this, "nIters", 1000};
+  Jug::Property<double> m_q{this, "q", 2.0};
+  Jug::Property<double> m_eps{this, "epsilon", 1e-4};
+  Jug::Property<double> m_minNpe{this, "minNpe", 0.5};
   // Pointer to the geometry service
   SmartIF<IGeoSvc> m_geoSvc;
 
 public:
-  // ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
-  PhotoRingClusters(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  // ill-formed: using JugAlgorithm::JugAlgorithm;
+  PhotoRingClusters(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputClusterCollection", m_outputClusterCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_geoSvc = service("GeoSvc");
@@ -111,7 +111,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(PhotoRingClusters)
 
 } // namespace Jug::Reco

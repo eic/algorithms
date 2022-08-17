@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-//#include "GaudiKernel/ToolHandle.h"
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+//#include "JugKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "DD4hep/DD4hepUnits.h"
 #include "DDRec/CellIDPositionConverter.h"
@@ -20,7 +20,7 @@
 #include "JugBase/IGeoSvc.h"
 
 // Event Model related classes
-//#include "GaudiExamples/MyTrack.h"
+//#include "JugExamples/MyTrack.h"
 #include "eicd/RawTrackerHitCollection.h"
 #include "eicd/TrackerHitCollection.h"
 
@@ -43,26 +43,26 @@ namespace Jug::Reco {
    *
    * \ingroup reco
    */
-  class TrackerHitReconstruction : public GaudiAlgorithm {
+  class TrackerHitReconstruction : public JugAlgorithm {
   private:
-    Gaudi::Property<float> m_timeResolution{this, "timeResolution", 10}; // in ns
-    DataHandle<eicd::RawTrackerHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader,
+    Jug::Property<float> m_timeResolution{this, "timeResolution", 10}; // in ns
+    DataHandle<eicd::RawTrackerHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader,
                                                                    this};
-    DataHandle<eicd::TrackerHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer,
+    DataHandle<eicd::TrackerHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer,
                                                                  this};
 
     /// Pointer to the geometry service
     SmartIF<IGeoSvc> m_geoSvc;
 
   public:
-    //  ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
-    TrackerHitReconstruction(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+    //  ill-formed: using JugAlgorithm::JugAlgorithm;
+    TrackerHitReconstruction(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
       declareProperty("inputHitCollection", m_inputHitCollection, "");
       declareProperty("outputHitCollection", m_outputHitCollection, "");
     }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       m_geoSvc = service("GeoSvc");
@@ -120,7 +120,5 @@ namespace Jug::Reco {
       return StatusCode::SUCCESS;
     }
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(TrackerHitReconstruction)
 
 } // namespace Jug::Reco

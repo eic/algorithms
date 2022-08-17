@@ -3,13 +3,13 @@
 
 #include <algorithm>
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "Jug/Property.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/SurfaceManager.h"
@@ -41,23 +41,23 @@ namespace Jug::Reco {
    *
    * \ingroup tracking
    */
-   class ParticlesFromTrackFit : public GaudiAlgorithm {
+   class ParticlesFromTrackFit : public JugAlgorithm {
    private:
-    DataHandle<TrajectoriesContainer>     m_inputTrajectories{"inputTrajectories", Gaudi::DataHandle::Reader, this};
-    DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Gaudi::DataHandle::Writer, this};
-    DataHandle<eicd::TrackParametersCollection> m_outputTrackParameters{"outputTrackParameters", Gaudi::DataHandle::Writer, this};
+    DataHandle<TrajectoriesContainer>     m_inputTrajectories{"inputTrajectories", Jug::DataHandle::Reader, this};
+    DataHandle<eicd::ReconstructedParticleCollection> m_outputParticles{"outputParticles", Jug::DataHandle::Writer, this};
+    DataHandle<eicd::TrackParametersCollection> m_outputTrackParameters{"outputTrackParameters", Jug::DataHandle::Writer, this};
 
    public:
-    //  ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
+    //  ill-formed: using JugAlgorithm::JugAlgorithm;
     ParticlesFromTrackFit(const std::string& name, ISvcLocator* svcLoc)
-        : GaudiAlgorithm(name, svcLoc) {
+        : JugAlgorithm(name, svcLoc) {
           declareProperty("inputTrajectories", m_inputTrajectories,"");
           declareProperty("outputParticles", m_outputParticles, "");
           declareProperty("outputTrackParameters", m_outputTrackParameters, "Acts Track Parameters");
         }
 
     StatusCode initialize() override {
-      if (GaudiAlgorithm::initialize().isFailure()) {
+      if (JugAlgorithm::initialize().isFailure()) {
         return StatusCode::FAILURE;
       }
       return StatusCode::SUCCESS;
@@ -186,7 +186,5 @@ namespace Jug::Reco {
     }
 
   };
-  // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-  DECLARE_COMPONENT(ParticlesFromTrackFit)
 
 } // namespace Jug::Reco

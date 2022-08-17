@@ -15,10 +15,10 @@
 #include <unordered_map>
 #include <cmath>
 
-#include "GaudiAlg/Transformer.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/PhysicalConstants.h"
+#include "JugAlg/Transformer.h"
+#include "JugAlg/JugTool.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/PhysicalConstants.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -28,7 +28,7 @@
 #include "edm4hep/SimTrackerHitCollection.h"
 
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Digi {
 
@@ -36,26 +36,26 @@ namespace Jug::Digi {
  *
  * \ingroup digi
  */
-class PhotoMultiplierDigi : public GaudiAlgorithm
+class PhotoMultiplierDigi : public JugAlgorithm
 {
 public:
     DataHandle<edm4hep::SimTrackerHitCollection>
-        m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
+        m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
     DataHandle<eicd::RawPMTHitCollection>
-        m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer, this};
-    Gaudi::Property<std::vector<std::pair<double, double>>>
+        m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer, this};
+    Jug::Property<std::vector<std::pair<double, double>>>
         u_quantumEfficiency{this, "quantumEfficiency", {{2.6*eV, 0.3}, {7.0*eV, 0.3}}};
-    Gaudi::Property<double> m_hitTimeWindow{this, "hitTimeWindow", 20.0*ns};
-    Gaudi::Property<double> m_timeStep{this, "timeStep", 0.0625*ns};
-    Gaudi::Property<double> m_speMean{this, "speMean", 80.0};
-    Gaudi::Property<double> m_speError{this, "speError", 16.0};
-    Gaudi::Property<double> m_pedMean{this, "pedMean", 200.0};
-    Gaudi::Property<double> m_pedError{this, "pedError", 3.0};
+    Jug::Property<double> m_hitTimeWindow{this, "hitTimeWindow", 20.0*ns};
+    Jug::Property<double> m_timeStep{this, "timeStep", 0.0625*ns};
+    Jug::Property<double> m_speMean{this, "speMean", 80.0};
+    Jug::Property<double> m_speError{this, "speError", 16.0};
+    Jug::Property<double> m_pedMean{this, "pedMean", 200.0};
+    Jug::Property<double> m_pedError{this, "pedError", 3.0};
     Rndm::Numbers m_rngUni, m_rngNorm;
 
     // constructor
     PhotoMultiplierDigi(const std::string& name, ISvcLocator* svcLoc)
-        : GaudiAlgorithm(name, svcLoc)
+        : JugAlgorithm(name, svcLoc)
     {
         declareProperty("inputHitCollection", m_inputHitCollection,"");
         declareProperty("outputHitCollection", m_outputHitCollection, "");
@@ -63,7 +63,7 @@ public:
 
     StatusCode initialize() override
     {
-        if (GaudiAlgorithm::initialize().isFailure()) {
+        if (JugAlgorithm::initialize().isFailure()) {
             return StatusCode::FAILURE;
         }
 
@@ -214,7 +214,5 @@ private:
     }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(PhotoMultiplierDigi)
 
 } // namespace Jug::Digi

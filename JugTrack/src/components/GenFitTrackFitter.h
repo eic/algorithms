@@ -8,10 +8,10 @@
 #include <stdexcept>
 #include <vector>
 
-// Gaudi
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "Gaudi/Property.h"
+// Jug
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "Jug/Property.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -40,7 +40,7 @@ namespace Jug::Reco {
    *
    * \ingroup tracking
    */
-  class GenFitTrackFitter : public GaudiAlgorithm {
+  class GenFitTrackFitter : public JugAlgorithm {
   public:
 
   class FieldImp : public genfit::AbsBField {
@@ -77,11 +77,11 @@ namespace Jug::Reco {
   };
 
 public:
-  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<TrackParametersContainer>  m_initialTrackParameters{"initialTrackParameters", Gaudi::DataHandle::Reader, this};
-  DataHandle<ProtoTrackContainer>       m_inputProtoTracks{"inputProtoTracks", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::TrackParametersCollection> m_foundTracks{"trackParameters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::TrajectoryCollection> m_outputTrajectories{"outputTrajectories", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::TrackerHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+  DataHandle<TrackParametersContainer>  m_initialTrackParameters{"initialTrackParameters", Jug::DataHandle::Reader, this};
+  DataHandle<ProtoTrackContainer>       m_inputProtoTracks{"inputProtoTracks", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::TrackParametersCollection> m_foundTracks{"trackParameters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::TrajectoryCollection> m_outputTrajectories{"outputTrajectories", Jug::DataHandle::Writer, this};
 
   SmartIF<IGeoSvc> m_geoSvc;
   // Acts::GeometryContext                 m_geoctx;

@@ -12,13 +12,13 @@
 
 #include <algorithm>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -31,7 +31,7 @@
 #include "eicd/PMTHitCollection.h"
 #include "eicd/RawPMTHitCollection.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -42,26 +42,26 @@ namespace Jug::Reco {
  *
  * \ingroup reco
  */
-class PhotoMultiplierReco : public GaudiAlgorithm {
+class PhotoMultiplierReco : public JugAlgorithm {
 private:
-  DataHandle<eicd::RawPMTHitCollection> m_inputHitCollection{"inputHitCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::PMTHitCollection> m_outputHitCollection{"outputHitCollection", Gaudi::DataHandle::Writer, this};
-  Gaudi::Property<double> m_timeStep{this, "timeStep", 0.0625 * ns};
-  Gaudi::Property<double> m_minNpe{this, "minNpe", 0.0};
-  Gaudi::Property<double> m_speMean{this, "speMean", 80.0};
-  Gaudi::Property<double> m_pedMean{this, "pedMean", 200.0};
+  DataHandle<eicd::RawPMTHitCollection> m_inputHitCollection{"inputHitCollection", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::PMTHitCollection> m_outputHitCollection{"outputHitCollection", Jug::DataHandle::Writer, this};
+  Jug::Property<double> m_timeStep{this, "timeStep", 0.0625 * ns};
+  Jug::Property<double> m_minNpe{this, "minNpe", 0.0};
+  Jug::Property<double> m_speMean{this, "speMean", 80.0};
+  Jug::Property<double> m_pedMean{this, "pedMean", 200.0};
   /// Pointer to the geometry service
   SmartIF<IGeoSvc> m_geoSvc;
 
 public:
-  // ill-formed: using GaudiAlgorithm::GaudiAlgorithm;
-  PhotoMultiplierReco(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  // ill-formed: using JugAlgorithm::JugAlgorithm;
+  PhotoMultiplierReco(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputHitCollection", m_inputHitCollection, "");
     declareProperty("outputHitCollection", m_outputHitCollection, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     m_geoSvc = service("GeoSvc");
@@ -107,7 +107,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(PhotoMultiplierReco)
 
 } // namespace Jug::Reco

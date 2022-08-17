@@ -5,12 +5,12 @@
 #include <numbers>
 
 #include <fmt/format.h>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -19,7 +19,7 @@
 #include "eicd/MCRecoClusterParticleAssociationCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Fast {
 
@@ -28,17 +28,17 @@ namespace Jug::Fast {
  *
  * \ingroup fast
  */
-class ClusterMerger : public GaudiAlgorithm {
+class ClusterMerger : public JugAlgorithm {
 private:
   // Input
-  DataHandle<eicd::ClusterCollection> m_inputClusters{"InputClusters", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_inputAssociations{"InputAssociations", Gaudi::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_inputClusters{"InputClusters", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_inputAssociations{"InputAssociations", Jug::DataHandle::Reader, this};
   // Output
-  DataHandle<eicd::ClusterCollection> m_outputClusters{"OutputClusters", Gaudi::DataHandle::Writer, this};
-  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_outputAssociations{"OutputAssociations", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::ClusterCollection> m_outputClusters{"OutputClusters", Jug::DataHandle::Writer, this};
+  DataHandle<eicd::MCRecoClusterParticleAssociationCollection> m_outputAssociations{"OutputAssociations", Jug::DataHandle::Writer, this};
 public:
   ClusterMerger(const std::string& name, ISvcLocator* svcLoc)
-      : GaudiAlgorithm(name, svcLoc) {
+      : JugAlgorithm(name, svcLoc) {
     declareProperty("inputClusters", m_inputClusters, "Input cluster collection");
     declareProperty("inputAssociations", m_inputAssociations, "Input cluster association");
     declareProperty("outputClusters", m_outputClusters, "Cluster collection with good energy precision");
@@ -46,7 +46,7 @@ public:
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
@@ -183,7 +183,5 @@ public:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ClusterMerger)
 
 } // namespace Jug::Fast

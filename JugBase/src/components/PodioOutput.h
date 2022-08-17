@@ -5,7 +5,7 @@
 #define JUGBASE_PODIOOUTPUT_H
 
 #include "JugBase/KeepDropSwitch.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
+#include "JugAlg/JugAlgorithm.h"
 #include "podio/CollectionBase.h"
 
 #include "TTree.h"
@@ -17,7 +17,7 @@
 class TFile;
 class PodioDataSvc;
 
-class PodioOutput : public GaudiAlgorithm {
+class PodioOutput : public JugAlgorithm {
 
 public:
   /// Constructor.
@@ -37,11 +37,11 @@ private:
   /// First event or not
   bool m_firstEvent;
   /// Root file name the output is written to
-  Gaudi::Property<std::string> m_filename{this, "filename", "output.root", "Name of the file to create"};
+  Jug::Property<std::string> m_filename{this, "filename", "output.root", "Name of the file to create"};
   /// Commands which output is to be kept
-  Gaudi::Property<std::vector<std::string>> m_outputCommands{
+  Jug::Property<std::vector<std::string>> m_outputCommands{
       this, "outputCommands", {"keep *"}, "A set of commands to declare which collections to keep or drop."};
-  Gaudi::Property<std::string> m_filenameRemote{
+  Jug::Property<std::string> m_filenameRemote{
       this, "filenameRemote", "", "An optional file path to copy the outputfile to."};
   /// Switch for keeping or dropping outputs
   KeepDropSwitch m_switch;

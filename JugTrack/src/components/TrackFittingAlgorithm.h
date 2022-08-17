@@ -10,9 +10,9 @@
 #include <random>
 #include <stdexcept>
 
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiKernel/ToolHandle.h"
-#include "Gaudi/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugKernel/ToolHandle.h"
+#include "Jug/Property.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -42,7 +42,7 @@ namespace Jug::Reco {
    *
    * \ingroup tracking
    */
-  class TrackFittingAlgorithm : public GaudiAlgorithm {
+  class TrackFittingAlgorithm : public JugAlgorithm {
   public:
     /// Track fitter function that takes input measurements, initial trackstate
     /// and fitter options and returns some track-fitter-specific result.
@@ -57,12 +57,12 @@ namespace Jug::Reco {
       const std::vector<IndexSourceLink>&, const TrackParameters&, const TrackFitterOptions&)>;
 
   public:
-    DataHandle<IndexSourceLinkContainer> m_inputSourceLinks{"inputSourceLinks", Gaudi::DataHandle::Reader, this};
-    DataHandle<TrackParametersContainer> m_initialTrackParameters{"initialTrackParameters", Gaudi::DataHandle::Reader, this};
-    DataHandle<MeasurementContainer>     m_inputMeasurements{"inputMeasurements", Gaudi::DataHandle::Reader, this};
-    DataHandle<ProtoTrackContainer>      m_inputProtoTracks{"inputProtoTracks", Gaudi::DataHandle::Reader, this};
-    DataHandle<TrajectoriesContainer>    m_foundTracks{"foundTracks", Gaudi::DataHandle::Reader, this};
-    DataHandle<TrajectoriesContainer>    m_outputTrajectories{"outputTrajectories", Gaudi::DataHandle::Writer, this};
+    DataHandle<IndexSourceLinkContainer> m_inputSourceLinks{"inputSourceLinks", Jug::DataHandle::Reader, this};
+    DataHandle<TrackParametersContainer> m_initialTrackParameters{"initialTrackParameters", Jug::DataHandle::Reader, this};
+    DataHandle<MeasurementContainer>     m_inputMeasurements{"inputMeasurements", Jug::DataHandle::Reader, this};
+    DataHandle<ProtoTrackContainer>      m_inputProtoTracks{"inputProtoTracks", Jug::DataHandle::Reader, this};
+    DataHandle<TrajectoriesContainer>    m_foundTracks{"foundTracks", Jug::DataHandle::Reader, this};
+    DataHandle<TrajectoriesContainer>    m_outputTrajectories{"outputTrajectories", Jug::DataHandle::Writer, this};
 
     FitterFunction                        m_trackFittingFunc;
     SmartIF<IGeoSvc>                      m_geoSvc;

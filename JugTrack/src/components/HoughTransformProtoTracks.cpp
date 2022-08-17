@@ -2,12 +2,12 @@
 // Copyright (C) 2022 Whitney Armstrong
 
 #include <cmath>
-// Gaudi
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/ToolHandle.h"
+// Jug
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "JugBase/DataHandle.h"
 #include "JugBase/IGeoSvc.h"
@@ -24,19 +24,19 @@ namespace Jug::Reco {
  *
  *  \ingroup tracking
  */
-class HoughTransformProtoTracks : public GaudiAlgorithm {
+class HoughTransformProtoTracks : public JugAlgorithm {
 private:
-  DataHandle<eicd::TrackerHitCollection> m_inputTrackerHits{"inputTrackerHits", Gaudi::DataHandle::Reader, this};
-  DataHandle<Jug::ProtoTrackContainer> m_outputProtoTracks{"outputProtoTracks", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::TrackerHitCollection> m_inputTrackerHits{"inputTrackerHits", Jug::DataHandle::Reader, this};
+  DataHandle<Jug::ProtoTrackContainer> m_outputProtoTracks{"outputProtoTracks", Jug::DataHandle::Writer, this};
 
 public:
-  HoughTransformProtoTracks(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  HoughTransformProtoTracks(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputTrackerHits", m_inputTrackerHits, "tracker hits whose indices are used in proto-tracks");
     declareProperty("outputProtoTracks", m_outputProtoTracks, "grouped hit indicies");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure())
+    if (JugAlgorithm::initialize().isFailure())
       return StatusCode::FAILURE;
     return StatusCode::SUCCESS;
   }
@@ -50,7 +50,5 @@ public:
     return StatusCode::SUCCESS;
   }
 };
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(HoughTransformProtoTracks)
 
 } // namespace Jug::Reco

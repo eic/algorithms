@@ -24,10 +24,10 @@
 #include "Acts/Plugins/DD4hep/DD4hepDetectorElement.hpp"
 #include <Acts/Material/IMaterialDecorator.hpp>
 
-// Gaudi
-#include "GaudiKernel/MsgStream.h"
-#include "GaudiKernel/Service.h"
-#include "GaudiKernel/ServiceHandle.h"
+// Jug
+#include "JugKernel/MsgStream.h"
+#include "JugKernel/Service.h"
+#include "JugKernel/ServiceHandle.h"
 
 // DD4Hep
 #include "DD4hep/Detector.h"
@@ -88,14 +88,14 @@ private:
   std::shared_ptr<const Jug::BField::DD4hepBField> m_magneticField = nullptr;
 
   /// XML-files with the detector description
-  Gaudi::Property<std::vector<std::string>> m_xmlFileNames{
+  Jug::Property<std::vector<std::string>> m_xmlFileNames{
       this, "detectors", {}, "Detector descriptions XML-files"};
 
   /// JSON-file with the material map
-  Gaudi::Property<std::string> m_jsonFileName{
+  Jug::Property<std::string> m_jsonFileName{
       this, "materials", "", "Material map JSON-file"};
 
-  /// Gaudi logging output
+  /// Jug logging output
   MsgStream m_log;
 
 public:

@@ -16,13 +16,13 @@
 #include "fmt/format.h"
 #include <boost/range/adaptor/map.hpp>
 
-#include "Gaudi/Property.h"
-#include "GaudiAlg/GaudiAlgorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/PhysicalConstants.h"
-#include "GaudiKernel/RndmGenerators.h"
-#include "GaudiKernel/ToolHandle.h"
+#include "Jug/Property.h"
+#include "JugAlg/JugAlgorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/PhysicalConstants.h"
+#include "JugKernel/RndmGenerators.h"
+#include "JugKernel/ToolHandle.h"
 
 #include "DDRec/CellIDPositionConverter.h"
 #include "DDRec/Surface.h"
@@ -39,7 +39,7 @@
 #include "eicd/ProtoClusterCollection.h"
 #include "eicd/vector_utils.h"
 
-using namespace Gaudi::Units;
+using namespace Jug::Units;
 
 namespace Jug::Reco {
 
@@ -64,28 +64,28 @@ static const std::map<std::string, std::function<double(double, double, double, 
  *
  * \ingroup reco
  */
-class ClusterRecoCoG : public GaudiAlgorithm {
+class ClusterRecoCoG : public JugAlgorithm {
 private:
-  Gaudi::Property<double> m_sampFrac{this, "samplingFraction", 1.0};
-  Gaudi::Property<double> m_logWeightBase{this, "logWeightBase", 3.6};
-  Gaudi::Property<double> m_depthCorrection{this, "depthCorrection", 0.0};
-  Gaudi::Property<std::string> m_energyWeight{this, "energyWeight", "log"};
-  Gaudi::Property<std::string> m_moduleDimZName{this, "moduleDimZName", ""};
+  Jug::Property<double> m_sampFrac{this, "samplingFraction", 1.0};
+  Jug::Property<double> m_logWeightBase{this, "logWeightBase", 3.6};
+  Jug::Property<double> m_depthCorrection{this, "depthCorrection", 0.0};
+  Jug::Property<std::string> m_energyWeight{this, "energyWeight", "log"};
+  Jug::Property<std::string> m_moduleDimZName{this, "moduleDimZName", ""};
   // Constrain the cluster position eta to be within
   // the eta of the contributing hits. This is useful to avoid edge effects
   // for endcaps.
-  Gaudi::Property<bool> m_enableEtaBounds{this, "enableEtaBounds", false};
+  Jug::Property<bool> m_enableEtaBounds{this, "enableEtaBounds", false};
 
-  DataHandle<eicd::ProtoClusterCollection> m_inputProto{"inputProtoClusterCollection", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusterCollection", Gaudi::DataHandle::Writer, this};
+  DataHandle<eicd::ProtoClusterCollection> m_inputProto{"inputProtoClusterCollection", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::ClusterCollection> m_outputClusters{"outputClusterCollection", Jug::DataHandle::Writer, this};
 
   // Collection for MC hits when running on MC
-  Gaudi::Property<std::string> m_mcHits{this, "mcHits", ""};
+  Jug::Property<std::string> m_mcHits{this, "mcHits", ""};
   // Optional handle to MC hits
   std::unique_ptr<DataHandle<edm4hep::SimCalorimeterHitCollection>> m_mcHits_ptr;
 
   // Collection for associations when running on MC
-  Gaudi::Property<std::string> m_outputAssociations{this, "outputAssociations", ""};
+  Jug::Property<std::string> m_outputAssociations{this, "outputAssociations", ""};
   // Optional handle to MC hits
   std::unique_ptr<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>> m_outputAssociations_ptr;
 
@@ -95,27 +95,27 @@ private:
   std::function<double(double, double, double, int)> weightFunc;
 
 public:
-  ClusterRecoCoG(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ClusterRecoCoG(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputProtoClusterCollection", m_inputProto, "");
     declareProperty("outputClusterCollection", m_outputClusters, "");
   }
 
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
 
     // Initialize the optional MC input hit collection if requested
     if (m_mcHits != "") {
       m_mcHits_ptr =
-        std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Gaudi::DataHandle::Reader,
+        std::make_unique<DataHandle<edm4hep::SimCalorimeterHitCollection>>(m_mcHits, Jug::DataHandle::Reader,
         this);
     }
 
     // Initialize the optional association collection if requested
     if (m_outputAssociations != "") {
       m_outputAssociations_ptr =
-        std::make_unique<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>>(m_outputAssociations, Gaudi::DataHandle::Writer,
+        std::make_unique<DataHandle<eicd::MCRecoClusterParticleAssociationCollection>>(m_outputAssociations, Jug::DataHandle::Writer,
         this);
     }
 
@@ -350,7 +350,5 @@ private:
   }
 };
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ClusterRecoCoG)
 
 } // namespace Jug::Reco

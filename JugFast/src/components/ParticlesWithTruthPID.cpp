@@ -6,11 +6,11 @@
 
 #include <fmt/format.h>
 
-#include "Gaudi/Algorithm.h"
-#include "GaudiAlg/GaudiTool.h"
-#include "GaudiAlg/Producer.h"
-#include "GaudiAlg/Transformer.h"
-#include "GaudiKernel/RndmGenerators.h"
+#include "Jug/Algorithm.h"
+#include "JugAlg/JugTool.h"
+#include "JugAlg/Producer.h"
+#include "JugAlg/Transformer.h"
+#include "JugKernel/RndmGenerators.h"
 
 #include "JugBase/DataHandle.h"
 
@@ -23,32 +23,32 @@
 
 namespace Jug::Fast {
 
-class ParticlesWithTruthPID : public GaudiAlgorithm {
+class ParticlesWithTruthPID : public JugAlgorithm {
 private:
-  DataHandle<edm4hep::MCParticleCollection> m_inputTruthCollection{"inputMCParticles", Gaudi::DataHandle::Reader, this};
-  DataHandle<eicd::TrackParametersCollection> m_inputTrackCollection{"inputTrackParameters", Gaudi::DataHandle::Reader,
+  DataHandle<edm4hep::MCParticleCollection> m_inputTruthCollection{"inputMCParticles", Jug::DataHandle::Reader, this};
+  DataHandle<eicd::TrackParametersCollection> m_inputTrackCollection{"inputTrackParameters", Jug::DataHandle::Reader,
                                                                      this};
   DataHandle<eicd::ReconstructedParticleCollection> m_outputParticleCollection{"ReconstructedParticles",
-                                                                               Gaudi::DataHandle::Writer, this};
+                                                                               Jug::DataHandle::Writer, this};
   DataHandle<eicd::MCRecoParticleAssociationCollection> m_outputAssocCollection{"MCRecoParticleAssociation",
-                                                                                Gaudi::DataHandle::Writer, this};
+                                                                                Jug::DataHandle::Writer, this};
 
   // Matching momentum tolerance requires 10% by default;
-  Gaudi::Property<double> m_pRelativeTolerance{this, "pRelativeTolerance", {0.1}};
+  Jug::Property<double> m_pRelativeTolerance{this, "pRelativeTolerance", {0.1}};
   // Matching phi tolerance of 10 mrad
-  Gaudi::Property<double> m_phiTolerance{this, "phiTolerance", {0.030}};
+  Jug::Property<double> m_phiTolerance{this, "phiTolerance", {0.030}};
   // Matchin eta tolerance of 0.1
-  Gaudi::Property<double> m_etaTolerance{this, "etaTolerance", {0.2}};
+  Jug::Property<double> m_etaTolerance{this, "etaTolerance", {0.2}};
 
 public:
-  ParticlesWithTruthPID(const std::string& name, ISvcLocator* svcLoc) : GaudiAlgorithm(name, svcLoc) {
+  ParticlesWithTruthPID(const std::string& name, ISvcLocator* svcLoc) : JugAlgorithm(name, svcLoc) {
     declareProperty("inputMCParticles", m_inputTruthCollection, "MCParticles");
     declareProperty("inputTrackParameters", m_inputTrackCollection, "outputTrackParameters");
     declareProperty("outputParticles", m_outputParticleCollection, "ReconstructedParticles");
     declareProperty("outputAssociations", m_outputAssocCollection, "MCRecoParticleAssociation");
   }
   StatusCode initialize() override {
-    if (GaudiAlgorithm::initialize().isFailure()) {
+    if (JugAlgorithm::initialize().isFailure()) {
       return StatusCode::FAILURE;
     }
     return StatusCode::SUCCESS;
@@ -156,8 +156,6 @@ public:
   }
 }; // namespace Jug::Fast
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-DECLARE_COMPONENT(ParticlesWithTruthPID)
 
 } // namespace Jug::Fast
 
