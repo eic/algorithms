@@ -25,7 +25,7 @@ foreach(_component ${algorithms_FIND_COMPONENTS})
     else()
       # not supported and optional -> skip
       list(REMOVE_ITEM algorithms_FIND_COMPONENTS ${_component})
-      if(NOT Acts_FIND_QUIETLY)
+      if(NOT algorithms_FIND_QUIETLY)
         message(STATUS "optional component '${_component}' not found")
       endif()
     endif()
@@ -33,13 +33,14 @@ foreach(_component ${algorithms_FIND_COMPONENTS})
 endforeach()
 
 # find external dependencies that are needed to link with algorithms. since the
-# exported Acts targets only store the linked external target names they need
+# exported algorithms targets only store the linked external target names they need
 # to be found again. this avoids hard-coded paths and makes the installed
 # config/library relocatable. use exact version match where possible to ensure
 # the same versions are found that were used at build time.
 # `find_dependency` is a wrapper around `find_package` that automatically
 # handles QUIET and REQUIRED parameters.
 include(CMakeFindDependencyMacro)
+find_dependency(fmt @fmt_VERSION@ CONFIG EXACT)
 if(Acts IN_LIST algorithms_COMPONENTS)
   find_dependency(Acts @Acts_VERSION@ CONFIG EXACT)
 endif()
