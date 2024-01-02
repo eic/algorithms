@@ -191,6 +191,25 @@ protected:
   void debug(std::string_view msg) const { report<LogLevel::kDebug>(msg); }
   void trace(std::string_view msg) const { report<LogLevel::kTrace>(msg); }
 
+  template <typename ...T> constexpr void critical(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kCritical>(fmt, std::forward<decltype(args)>(args)...);
+  }
+  template <typename ...T> constexpr void error(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kError>(fmt, std::forward<decltype(args)>(args)...);
+  }
+  template <typename ...T> constexpr void warning(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kWarning>(fmt, std::forward<decltype(args)>(args)...);
+  }
+  template <typename ...T> constexpr void info(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kInfo>(fmt, std::forward<decltype(args)>(args)...);
+  }
+  template <typename ...T> constexpr void debug(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kDebug>(fmt, std::forward<decltype(args)>(args)...);
+  }
+  template <typename ...T> constexpr void trace(fmt::format_string<T...> fmt, T&&... args) const {
+    report_fmt<LogLevel::kTrace>(fmt, std::forward<decltype(args)>(args)...);
+  }
+
   bool aboveCriticalThreshold() const { return m_level >= LogLevel::kCritical; }
   bool aboveErrorThreshold() const { return m_level >= LogLevel::kError; }
   bool aboveWarningThreshold() const { return m_level >= LogLevel::kWarning; }
@@ -213,6 +232,13 @@ protected:
   }
 
 private:
+  template <LogLevel l, typename ...T>
+  constexpr void report_fmt(fmt::format_string<T...> fmt, T&&... args) const {
+    if (l >= m_level) {
+      m_logger.report(l, m_caller, fmt::format(fmt, std::forward<decltype(args)>(args)...));
+    }
+  }
+
   template <LogLevel l> void report(std::string_view msg) const {
     if (l >= m_level) {
       m_logger.report(l, m_caller, msg);
