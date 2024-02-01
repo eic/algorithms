@@ -6,7 +6,7 @@
 ################################################################################
 
 set(SUBDIR "truth")
-set(LIBRARY "algo${SUBDIR}")
+set(LIBRARY "${SUBDIR}")
 set(TARGETS ${TARGETS} ${LIBRARY} PARENT_SCOPE)
 
 # FIXME: adding one by one
@@ -29,6 +29,7 @@ target_include_directories(${LIBRARY}
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${SUBDIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${LIBRARY} PROPERTIES
+  OUTPUT_NAME algo${SUBDIR}
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
