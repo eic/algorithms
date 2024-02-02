@@ -56,4 +56,7 @@ foreach(_component ${algorithms_COMPONENTS})
   endif()
   # include the targets file to create the imported targets for the user
   include(${CMAKE_CURRENT_LIST_DIR}/algorithms${_component}Targets.cmake)
+  # create backwards compatible alias
+  string(TOLOWER ${_component} _component_LOWER)
+  add_library(algorithms::algo${_component_LOWER} ALIAS algorithms::${_component_LOWER})
 endforeach()

@@ -2,11 +2,11 @@
 # Copyright (C) 2022 Wouter Deconinck, Sylvester Joosten
 
 ################################################################################
-# Package: algorithms core utilities
+# Package: algorithms pid utilities
 ################################################################################
 
 set(SUBDIR "pid")
-set(LIBRARY "algo${SUBDIR}")
+set(LIBRARY "${SUBDIR}")
 set(TARGETS ${TARGETS} ${LIBRARY} PARENT_SCOPE)
 
 # FIXME: adding one by one
@@ -15,18 +15,20 @@ set(SRC
 )
 
 add_library(${LIBRARY} SHARED ${SRC})
+add_library(algorithms::${LIBRARY} ALIAS ${LIBRARY})
 target_link_libraries(${LIBRARY}
   PUBLIC
     EDM4HEP::edm4hep
     EDM4EIC::edm4eic
     DD4hep::DDRec
-    algocore
+    algorithms::core
     fmt::fmt)
 target_include_directories(${LIBRARY}
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${SUBDIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${LIBRARY} PROPERTIES
+  OUTPUT_NAME algo${SUBDIR}
   VERSION ${PROJECT_VERSION}
   SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
