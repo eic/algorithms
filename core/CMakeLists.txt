@@ -12,6 +12,7 @@ set(TARGETS ${TARGETS} ${LIBRARY} PARENT_SCOPE)
 file(GLOB SRC CONFIGURE_DEPENDS src/*.cpp)
 
 add_library(${LIBRARY} SHARED ${SRC})
+add_library(algorithms::${LIBRARY} ALIAS ${LIBRARY})
 target_link_libraries(${LIBRARY}
   PUBLIC
     EDM4HEP::edm4hep

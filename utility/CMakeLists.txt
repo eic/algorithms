@@ -2,7 +2,7 @@
 # Copyright (C) 2022 Wouter Deconinck, Sylvester Joosten
 
 ################################################################################
-# Package: algorithms core utilities
+# Package: algorithms utilities
 ################################################################################
 
 set(SUBDIR "utility")
@@ -15,12 +15,13 @@ set(SRC
 )
 
 add_library(${LIBRARY} SHARED ${SRC})
+add_library(algorithms::${LIBRARY} ALIAS ${LIBRARY})
 target_link_libraries(${LIBRARY}
   PUBLIC
     EDM4HEP::edm4hep
     EDM4EIC::edm4eic
     DD4hep::DDRec
-    algocore
+    algorithms::core
     fmt::fmt)
 target_include_directories(${LIBRARY}
   PUBLIC
