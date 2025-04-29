@@ -192,22 +192,22 @@ protected:
   void trace(std::string_view msg) const { report<LogLevel::kTrace>(msg); }
 
   template <typename ...T> constexpr void critical(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kCritical>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kCritical>(fmt, std::forward<decltype(args)>(args)...);
   }
   template <typename ...T> constexpr void error(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kError>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kError>(fmt, std::forward<decltype(args)>(args)...);
   }
   template <typename ...T> constexpr void warning(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kWarning>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kWarning>(fmt, std::forward<decltype(args)>(args)...);
   }
   template <typename ...T> constexpr void info(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kInfo>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kInfo>(fmt, std::forward<decltype(args)>(args)...);
   }
   template <typename ...T> constexpr void debug(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kDebug>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kDebug>(fmt, std::forward<decltype(args)>(args)...);
   }
   template <typename ...T> constexpr void trace(fmt::format_string<T...> fmt, T&&... args) const {
-    log<LogLevel::kTrace>(fmt, std::forward<decltype(args)>(args)...);
+    report_fmt<LogLevel::kTrace>(fmt, std::forward<decltype(args)>(args)...);
   }
 
   bool aboveCriticalThreshold() const { return m_level >= LogLevel::kCritical; }
@@ -232,7 +232,7 @@ protected:
   }
 
   template <LogLevel l, typename ...T>
-  constexpr void log(fmt::format_string<T...> fmt, T&&... args) const {
+  constexpr void report_fmt(fmt::format_string<T...> fmt, T&&... args) const {
     if (l >= m_level) {
       m_logger.report(l, m_caller, fmt::format(fmt, std::forward<decltype(args)>(args)...));
     }
