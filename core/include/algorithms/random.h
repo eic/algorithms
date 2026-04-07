@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <functional>
 #include <mutex>
@@ -27,27 +28,27 @@ class Generator {
 public:
   Generator(const RandomEngineCB& gen, const size_t cache_size) : m_gen{gen, cache_size} {}
 
-  template <class Int = int> Int uniform_int(const Int min, const Int max) const {
+  template <std::integral Int = int> Int uniform_int(const Int min = Int{0}, const Int max = Int{1}) const {
     std::uniform_int_distribution<Int> d{min, max};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <class Float = double> Float uniform_double(const Float min, const Float max) const {
+  template <std::floating_point Float = double> Float uniform_double(const Float min = Float{0}, const Float max = Float{1}) const {
     std::uniform_real_distribution<Float> d{min, max};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <class Int = int> Int poisson(const Int mean) const {
+  template <std::integral Int = int> Int poisson(const Int mean = Int{1}) const {
     std::poisson_distribution<Int> d{mean};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <class Float = double> Float exponential(const Float lambda) const {
+  template <std::floating_point Float = double> Float exponential(const Float lambda = Float{1}) const {
     std::exponential_distribution<Float> d{lambda};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <class Float = double> Float gaussian(const Float mu, const Float sigma) const {
+  template <std::floating_point Float = double> Float gaussian(const Float mu = Float{0}, const Float sigma = Float{1}) const {
     std::normal_distribution<Float> d{mu, sigma};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);

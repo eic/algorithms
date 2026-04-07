@@ -14,9 +14,9 @@ include(algorithmsRetrieveVersion)
 
 project(algorithms VERSION ${_algorithms_version} LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "")
-if(NOT CMAKE_CXX_STANDARD MATCHES "17|20")
-  message(FATAL_ERROR "Unsupported C++ standard: ${CMAKE_CXX_STANDARD}")
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 20)
+    message(STATUS "${PROJECT_NAME}: Setting default C++ standard to ${CMAKE_CXX_STANDARD}")
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
