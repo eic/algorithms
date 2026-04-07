@@ -12,7 +12,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # determine project version; sets _algorithms_version
 include(algorithmsRetrieveVersion)
 
-project(algorithms VERSION ${_algorithms_version})
+project(algorithms VERSION ${_algorithms_version} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "")
 if(NOT CMAKE_CXX_STANDARD MATCHES "17|20")

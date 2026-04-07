@@ -23,7 +23,7 @@ public:
   // Initialize the geometry service, to be called after with a global detector
   // pointer (will not re-initialize), or after at least the detectors property was specified
   // (will load XML and then fully initialize)
-  void init(dd4hep::Detector* = nullptr);
+  void init(const dd4hep::Detector* = nullptr);
 
   // TODO check const-ness
   gsl::not_null<const dd4hep::Detector*> detector() const { return m_detector; }
@@ -33,7 +33,8 @@ public:
   }
 
 private:
-  dd4hep::Detector* m_detector = nullptr;
+  const dd4hep::Detector* m_detector = nullptr;
+  std::unique_ptr<const dd4hep::Detector> m_detector_ptr;
   std::unique_ptr<const dd4hep::rec::CellIDPositionConverter> m_converter;
 
   // Configuration variables. These only need to be specified if we are actually running
