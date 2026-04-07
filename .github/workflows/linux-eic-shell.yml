@@ -69,8 +69,8 @@ jobs:
         path: .ccache
         key: ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-${{ github.head_ref || github.ref_name }}-${{ steps.ccache_cache_timestamp.outputs.timestamp }}
         restore-keys: |
-          ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-${{ github.ref_name }}-
           ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-${{ github.head_ref }}-
+          ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-${{ github.ref_name }}-
           ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-${{ github.base_ref }}-
           ccache-${{ matrix.CXX }}-${{ env.release }}-${{ matrix.CMAKE_BUILD_TYPE }}-
           ccache-${{ matrix.CXX }}-${{ env.release }}-
