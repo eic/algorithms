@@ -74,15 +74,5 @@ include(algorithmsComponentsHelpers) # handle components via add_..._if commands
 
 add_component(core Core)
 
-# FIXME: add directory as soon as one algorithm converted
-#add_component(acts Acts)
-add_component(calorimetry Calorimetry)
-#add_component(dis DIS)
-#add_component(far_forward Far_Forward)
-#add_component(pid PID)
-#add_component(tracking Tracking)
-add_component(truth Truth)
-#add_component(utility Utility)
-
 # create cmake configuration files
 include(algorithmsCreatePackageConfig)
