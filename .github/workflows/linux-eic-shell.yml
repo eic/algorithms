@@ -58,7 +58,7 @@ jobs:
             CXXFLAGS: -Werror -Wall -Wextra
       fail-fast: false
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Prepare ccache timestamp
       id: ccache_cache_timestamp
       run: |
