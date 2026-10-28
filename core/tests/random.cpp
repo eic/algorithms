@@ -135,6 +135,26 @@ TEST_CASE("Generator draws uniform floating point numbers", "[random]") {
   CHECK(sum / kDraws == Approx(0.5).margin(0.02));
 }
 
+TEST_CASE("Generator draws Poisson distributed numbers", "[random]") {
+  const Generator gen{mtEngine(3), 16};
+
+  double sum_def    = 0;
+  double sum_custom = 0;
+  for (int i = 0; i < kDraws; ++i) {
+    const auto def = gen.poisson();
+    STATIC_REQUIRE(std::is_same_v<decltype(def), const int>);
+    REQUIRE(def >= 0);
+    sum_def += def;
+
+    const auto custom = gen.poisson<int64_t>(2.5);
+    STATIC_REQUIRE(std::is_same_v<decltype(custom), const int64_t>);
+    REQUIRE(custom >= 0);
+    sum_custom += custom;
+  }
+  CHECK(sum_def / kDraws == Approx(1.).margin(0.05));
+  CHECK(sum_custom / kDraws == Approx(2.5).margin(0.1));
+}
+
 TEST_CASE("Generator draws exponentially distributed numbers", "[random]") {
   const Generator gen{mtEngine(4), 16};
 
@@ -195,21 +215,41 @@ TEST_CASE("RandomSvc engines with the same seed draw the same numbers", "[random
   CHECK(engine1(5) == engine2(5));
 }
 
-// Known bug: createEngine passes its std::mt19937_64 to std::generate by value, so the
-// engine state never advances and every call returns the same numbers
-TEST_CASE("RandomSvc engines draw new numbers on every call", "[random][!shouldfail]") {
+TEST_CASE("RandomSvc engines draw new numbers on every call", "[random]") {
   auto engine = RandomSvc::instance().createEngine(9);
   CHECK(engine(5) != engine(5));
 }
 
-// Known bug: all engines created by createEngine share one static std::mt19937_64, which is
-// seeded only by the first engine that is called, so the seed of later engines is ignored
-TEST_CASE("RandomSvc engines with different seeds draw different numbers",
-          "[random][!shouldfail]") {
+TEST_CASE("RandomSvc engines with different seeds draw different numbers", "[random]") {
   auto& svc    = RandomSvc::instance();
   auto engine1 = svc.createEngine(10);
   auto engine2 = svc.createEngine(11);
   CHECK(engine1(5) != engine2(5));
+}
+
+TEST_CASE("RandomSvc engines are independent", "[random]") {
+  auto& svc    = RandomSvc::instance();
+  auto engine1 = svc.createEngine(12);
+  auto engine2 = svc.createEngine(12);
+  auto engine3 = svc.createEngine(13);
+
+  // drawing from other engines does not affect the sequence of an engine
+  const auto first = engine1(5);
+  engine3(5);
+  const auto second = engine1(5);
+  CHECK(first != second);
+  CHECK(engine2(5) == first);
+  CHECK(engine2(5) == second);
+}
+
+TEST_CASE("Generators do not repeat when their cache is refreshed", "[random]") {
+  const Generator gen{RandomSvc::instance().createEngine(14), 4};
+  std::vector<double> values;
+  for (int i = 0; i < 8; ++i) {
+    values.push_back(gen.uniform_double());
+  }
+  CHECK(std::vector<double>(values.begin(), values.begin() + 4) !=
+        std::vector<double>(values.begin() + 4, values.end()));
 }
 
 // The RandomSvc is a process-wide singleton, so its lifecycle is tested in a single test case
