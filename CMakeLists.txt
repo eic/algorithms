@@ -69,6 +69,12 @@ endif()
 find_package(DD4hep COMPONENTS DDRec REQUIRED)
 find_package(fmt REQUIRED)
 
+# Tests (require Catch2 v3, skipped with a warning if not found)
+option(BUILD_TESTING "Build the tests" ON)
+if(BUILD_TESTING)
+  enable_testing()
+endif()
+
 include(GNUInstallDirs)
 include(algorithmsComponentsHelpers) # handle components via add_..._if commands
 
