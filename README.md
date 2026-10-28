@@ -4,7 +4,13 @@ This code defines a framework for creating and managing algorithms in a C++ appl
 
 **1. Input/Output Type Handling:**
 
-* `Input<T...>` and `Output<T...>`: These template structs define how algorithm inputs and outputs are handled. They use `input_type_t` and `output_type_t` to map different types (`T`, `std::optional<T>`, `std::vector<T>`) to appropriate pointer types, ensuring non-null inputs and allowing for optional or vector-based arguments.
+* `Input<T...>` and `Output<T...>`: These template structs define how algorithm inputs and outputs are handled. They use `input_type_t` and `output_type_t` to map different types (`T`, `std::optional<T>`, `std::vector<T>`, `std::vector<std::optional<T>>`) to appropriate pointer types, ensuring non-null inputs and allowing for optional or vector-based arguments.
+  * `T` → `gsl::not_null<const T*>`: a required argument.
+  * `std::optional<T>` → `const T*`: an optional argument, `nullptr` when absent.
+  * `std::vector<T>` → `std::vector<gsl::not_null<const T*>>`: a variadic argument with N required entries (N may be zero).
+  * `std::vector<std::optional<T>>` → `std::vector<const T*>`: a variadic argument with N optional entries, each `nullptr` when absent, in the same order as the names.
+
+  Outputs follow the same scheme with `T*` in place of `const T*`.
 
 **2. Algorithm Base Classes:**
 
@@ -26,7 +32,7 @@ This code defines a framework for creating and managing algorithms in a C++ appl
 * `Configurable` and `PropertyMixin`: Enable algorithms to have configurable properties.
 * `RandomSvc`: A service for generating random numbers using various distributions.
 * `Service<SvcType>` and `ServiceSvc`: Infrastructure for managing services as lazy-evaluated singletons.
-* Type traits (`is_vector`, `is_optional`, `data_type_t`, `input_type_t`, `output_type_t`): Help with argument type deduction and mapping.
+* Type traits (`is_vector`, `is_optional`, `is_vector_of_optional`, `data_type_t`, `input_type_t`, `output_type_t`): Help with argument type deduction and mapping.
 
 **In essence, this code provides a structured way to:**
 
