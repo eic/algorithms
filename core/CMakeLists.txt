@@ -39,8 +39,7 @@ install(TARGETS ${LIBRARY}
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/${SUBDIR}/include/algorithms
 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT dev)
 
-# TODO: Testing
-#if(BUILD_TESTING)
-#  enable_testing()
-#endif()
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 
