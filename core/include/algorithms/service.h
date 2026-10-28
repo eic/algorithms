@@ -67,8 +67,17 @@ public:
   // - prior to init --> just add the service to the service stack and set the initializer
   // - after init    --> add service to call stack, set the initializer,
   //                     manually call init for the service, revalidate
+  // The service must be fully constructed, as it is initialized right away after init.
   template <class Svc>
   void add(
+      ServiceBase* svc, const std::function<void(Svc&)>& init = [](Svc& s) { s.init(); }) {
+    registerService<Svc>(svc, init);
+    initStraggler<Svc>();
+  }
+  // add a service to the service stack and set the initializer, without initializing it
+  // (used by the Service constructor, as the service is not yet fully constructed there)
+  template <class Svc>
+  void registerService(
       ServiceBase* svc, const std::function<void(Svc&)>& init = [](Svc& s) { s.init(); }) {
     m_keys.push_back(Svc::kName);
     m_services[Svc::kName] = svc;
@@ -77,16 +86,20 @@ public:
     if (m_initializers.count(Svc::kName) == 0) {
       setInit(init);
     }
-    // call init if we are already in an initialized state (this is a straggler)
-    if (m_init) {
+  }
+  // call init if we are already in an initialized state (this is a straggler)
+  template <class Svc> void initStraggler() {
+    if (m_init && !m_services.at(Svc::kName)->ready()) {
       initSingle<Svc>();
       validate();
     }
   }
 
   template <class Svc> bool has() const { return m_services.count(Svc::kName); }
+  // The initializer gets the registered service, so it does not need Svc::instance(), which
+  // may still be under construction
   template <class Svc> void setInit(const std::function<void(Svc&)>& init) {
-    m_initializers[Svc::kName] = [init]() { init(Svc::instance()); };
+    m_initializers[Svc::kName] = [init](ServiceBase* svc) { init(*static_cast<Svc*>(svc)); };
   }
 
   // Loop over all services in order and initialize one-by-one
@@ -98,13 +111,13 @@ public:
     }
     // Call init for all the services and mark as ready
     for (const auto& name : m_keys) {
+      auto svc = m_services.at(name);
       try {
-        m_initializers.at(name)();
+        m_initializers.at(name)(svc);
       } catch (const std::exception& e) {
         // we encountered an issue, stop here so validation fails
         break;
       }
-      auto svc = m_services.at(name);
       // Ensure our init made sense -- cannot have missing properties at this stage
       if (svc->missingProperties().size() > 0) {
         break;
@@ -132,7 +145,7 @@ public:
       throw ServiceError(fmt::format("Cannot initialize service {} - already initialized", name));
     }
     // call init
-    m_initializers.at(name)();
+    m_initializers.at(name)(svc);
     // mark as ready
     svc->ready(true);
   }
@@ -186,7 +199,7 @@ public:
 private:
   std::vector<std::string_view> m_keys;                // Ordered list of service keys
   std::map<std::string_view, ServiceBase*> m_services; // Map of services for easier lookup
-  std::map<std::string_view, std::function<void()>> m_initializers; // Init calls
+  std::map<std::string_view, std::function<void(ServiceBase*)>> m_initializers; // Init calls
   bool m_init = false; // did we initialize the services already?
 };
 
@@ -198,14 +211,20 @@ template <class SvcType> class Service : public ServiceBase, public NameMixin {
 public:
   static SvcType& instance() {
     // This is guaranteed to be thread-safe from C++11 onwards.
-    static SvcType svc;
+    static SvcType& svc = []() -> SvcType& {
+      static SvcType s;
+      // services created after ServiceSvc::init() are initialized here, once they are fully
+      // constructed (initializing them from the constructor would be too early)
+      ServiceSvc::instance().initStraggler<SvcType>();
+      return s;
+    }();
     return svc;
   }
   // constructor for the service base class registers the service, except
   // for the ServiceSvc which is its own thing (avoid circularity)
   // (services don't currently have an attached description)
   Service(std::string_view name) : NameMixin{name, name} {
-    ServiceSvc::instance().add<SvcType>(this);
+    ServiceSvc::instance().registerService<SvcType>(this);
   }
 };
 

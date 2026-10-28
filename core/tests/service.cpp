@@ -71,6 +71,42 @@ private:
   ALGORITHMS_DEFINE_SERVICE(CustomInitSvc)
 };
 
+// Instantiated only after ServiceSvc::init()
+class LateSvc : public Service<LateSvc> {
+public:
+  void init() { ++m_count; }
+  int count() const { return m_count; }
+
+private:
+  int m_count = 0;
+
+  ALGORITHMS_DEFINE_SERVICE(LateSvc)
+};
+
+// Instantiated only after ServiceSvc::init(), with a custom initializer
+class LateCustomInitSvc : public Service<LateCustomInitSvc> {
+public:
+  void init() { m_value = -1; }
+  void init(int value) { m_value = value; }
+  int value() const { return m_value; }
+
+private:
+  int m_value = 0;
+
+  ALGORITHMS_DEFINE_SERVICE(LateCustomInitSvc)
+};
+
+// Not a Service<>, but added to the ServiceSvc by the framework
+class ExternalSvc : public ServiceBase {
+public:
+  constexpr static const char* kName = "ExternalSvc";
+  void init() { ++m_count; }
+  int count() const { return m_count; }
+
+private:
+  int m_count = 0;
+};
+
 // Never instantiated, so never registered
 class UnusedSvc : public Service<UnusedSvc> {
 public:
@@ -152,5 +188,27 @@ TEST_CASE("ServiceSvc initializes all registered services", "[service]") {
   svcs.initSingle<CountingSvc>();
   CHECK(counting.ready());
   CHECK(counting.count() == 4);
+  CHECK(svcs.ready());
+
+  // services created after initialization are initialized when first accessed
+  auto& late = LateSvc::instance();
+  CHECK(svcs.has<LateSvc>());
+  CHECK(late.ready());
+  CHECK(late.count() == 1);
+  CHECK(&LateSvc::instance() == &late);
+  CHECK(late.count() == 1);
+  CHECK(svcs.ready());
+
+  // ... using their custom initializer if one was set before
+  svcs.setInit<LateCustomInitSvc>([](LateCustomInitSvc& s) { s.init(7); });
+  CHECK(LateCustomInitSvc::instance().ready());
+  CHECK(LateCustomInitSvc::instance().value() == 7);
+
+  // services added by the framework after initialization are initialized right away
+  ExternalSvc external;
+  svcs.add<ExternalSvc>(&external);
+  CHECK(svcs.has<ExternalSvc>());
+  CHECK(external.ready());
+  CHECK(external.count() == 1);
   CHECK(svcs.ready());
 }
