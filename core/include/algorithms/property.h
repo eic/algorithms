@@ -7,6 +7,7 @@
 //
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -148,31 +149,50 @@ public:
     template <typename U> decltype(auto) operator/(const U& rhs) const { return m_value / rhs; }
 
     // stl collection helpers if needed
-    // forced to be templated so we only declare them when used
-    template <class U = const value_type> decltype(auto) size() const { return value().size(); }
-    template <class U = const value_type> decltype(auto) length() const { return value().length(); }
-    template <class U = const value_type> decltype(auto) empty() const { return value().empty(); }
-    template <class U = value_type> decltype(auto) clear() { value().clear(); }
-    template <class U = const value_type> decltype(auto) begin() const { return value().begin(); }
-    template <class U = const value_type> decltype(auto) end() const { return value().end(); }
-    template <class U = value_type> decltype(auto) begin() { return value().begin(); }
-    template <class U = value_type> decltype(auto) end() { return value().end(); }
-    template <class Arg> decltype(auto) operator[](const Arg& arg) const { return value()[arg]; }
-    template <class Arg> decltype(auto) operator[](const Arg& arg) { return value()[arg]; }
-    template <class U = const value_type>
-    decltype(auto) find(const typename U::key_type& key) const {
+    // constrained so they only exist when the value type provides them, so generic code
+    // (e.g. range detection in fmt) does not mistake every Property for a collection
+    // (no mutating helpers, as the Property acts as if it is constant)
+    decltype(auto) size() const
+      requires requires(const T& v) { v.size(); }
+    {
+      return value().size();
+    }
+    decltype(auto) length() const
+      requires requires(const T& v) { v.length(); }
+    {
+      return value().length();
+    }
+    decltype(auto) empty() const
+      requires requires(const T& v) { v.empty(); }
+    {
+      return value().empty();
+    }
+    decltype(auto) begin() const
+      requires requires(const T& v) { v.begin(); }
+    {
+      return value().begin();
+    }
+    decltype(auto) end() const
+      requires requires(const T& v) { v.end(); }
+    {
+      return value().end();
+    }
+    template <class Arg>
+      requires requires(const T& v, const Arg& arg) { v[arg]; }
+    decltype(auto) operator[](const Arg& arg) const {
+      return value()[arg];
+    }
+    template <class Key>
+      requires requires(const T& v, const Key& key) { v.find(key); }
+    decltype(auto) find(const Key& key) const {
       return value().find(key);
     }
-    template <class U = value_type> decltype(auto) find(const typename U::key_type& key) {
-      return value().find(key);
-    }
-    template <class Arg> decltype(auto) erase(const Arg& arg) { return value().erase(arg); }
 
     // In case our property has operator (), delegate the operator()
     template <class... Args>
-    decltype(std::declval<value_type>()(std::declval<Args&&>()...))
-    operator()(Args&&... args) const {
-      return m_value()(std::forward<Args>(args)...);
+      requires std::invocable<const T&, Args&&...>
+    decltype(auto) operator()(Args&&... args) const {
+      return m_value(std::forward<Args>(args)...);
     }
 
   private:
@@ -195,11 +215,20 @@ bool operator==(const U& rhs, const algorithms::Configurable::Property<T>& p) {
 }
 #endif
 template <class T>
+  requires requires(std::ostream& os, const T& v) { os << v; }
 std::ostream& operator<<(std::ostream& os, const algorithms::Configurable::Property<T>& p) {
   return os << p.value();
 }
 
-// Make Property formateble
+// Make Property formateble, as its value (also for collections, which are not formatted
+// as a range of the Property itself)
 template <class T>
-struct fmt::formatter<algorithms::Configurable::Property<T>> : fmt::formatter<T> {};
+struct fmt::formatter<algorithms::Configurable::Property<T>> : fmt::formatter<T> {
+  template <class FormatContext>
+  auto format(const algorithms::Configurable::Property<T>& p, FormatContext& ctx) const {
+    return fmt::formatter<T>::format(p.value(), ctx);
+  }
+};
+template <class T, class Char>
+struct fmt::is_range<algorithms::Configurable::Property<T>, Char> : std::false_type {};
 // others needed??? TODO

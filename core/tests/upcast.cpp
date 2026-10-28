@@ -58,6 +58,17 @@ TEST_CASE("Booleans and other types are not upcast", "[upcast]") {
   STATIC_REQUIRE(std::is_same_v<upcast_type_t<std::vector<int>>, std::vector<int>>);
 }
 
+TEST_CASE("References and cv-qualifiers are removed before upcasting", "[upcast]") {
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<int&>, int64_t>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const int&>, int64_t>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const unsigned>, uint64_t>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<float&&>, double>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const Color&>, int64_t>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const bool&>, bool>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const std::string&>, std::string>);
+  STATIC_REQUIRE(std::is_same_v<upcast_type_t<const char(&)[5]>, std::string>);
+}
+
 TEST_CASE("upcast converts values without changing them", "[upcast]") {
   CHECK(upcast(uint8_t{255}) == uint64_t{255});
   CHECK(upcast(int8_t{-128}) == int64_t{-128});
@@ -69,4 +80,8 @@ TEST_CASE("upcast converts values without changing them", "[upcast]") {
   STATIC_REQUIRE(std::is_same_v<decltype(upcast(uint8_t{1})), uint64_t>);
   STATIC_REQUIRE(std::is_same_v<decltype(upcast(1.5f)), double>);
   STATIC_REQUIRE(std::is_same_v<decltype(upcast("text")), std::string>);
+
+  const int16_t lvalue = -3;
+  CHECK(upcast(lvalue) == int64_t{-3});
+  STATIC_REQUIRE(std::is_same_v<decltype(upcast(lvalue)), int64_t>);
 }

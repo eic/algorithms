@@ -8,7 +8,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #include <cstdint>
+#include <ostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -90,13 +94,13 @@ TEST_CASE("Properties are set and retrieved through their upcast type", "[proper
   CHECK(c.getProperty<std::vector<int>>("ints") == std::vector<int>{4, 5});
   CHECK(c.getProperty<std::vector<std::string>>("strings") == std::vector<std::string>{"c"});
 
-  CHECK((c.m_bool == false));
-  CHECK((c.m_int == 5));
-  CHECK((c.m_uint == 6u));
-  CHECK((c.m_float == 2.5f));
-  CHECK((c.m_double == 3.5));
-  CHECK((c.m_string == "other"));
-  CHECK((c.m_mode == Mode::kSlow));
+  CHECK(c.m_bool == false);
+  CHECK(c.m_int == 5);
+  CHECK(c.m_uint == 6u);
+  CHECK(c.m_float == 2.5f);
+  CHECK(c.m_double == 3.5);
+  CHECK(c.m_string == "other");
+  CHECK(c.m_mode == Mode::kSlow);
 }
 
 TEST_CASE("Properties reject unknown names and wrong types", "[property]") {
@@ -125,13 +129,13 @@ TEST_CASE("Properties act as a const value", "[property]") {
   CHECK(i == 3);
   CHECK(c.m_int.value() == 3);
 
-  CHECK((c.m_int == 3));
-  CHECK((3 == c.m_int));
-  CHECK((c.m_int != 4));
-  CHECK((c.m_int < 4));
-  CHECK((c.m_int <= 3));
-  CHECK((c.m_int > 2));
-  CHECK((c.m_int >= 3));
+  CHECK(c.m_int == 3);
+  CHECK(3 == c.m_int);
+  CHECK(c.m_int != 4);
+  CHECK(c.m_int < 4);
+  CHECK(c.m_int <= 3);
+  CHECK(c.m_int > 2);
+  CHECK(c.m_int >= 3);
   CHECK(c.m_int + 1 == 4);
   CHECK(c.m_int - 1 == 2);
   CHECK(c.m_int * 2 == 6);
@@ -139,12 +143,42 @@ TEST_CASE("Properties act as a const value", "[property]") {
   CHECK(c.m_float * 2.f == 3.f);
 }
 
-TEST_CASE("Properties can be printed", "[property]") {
+TEST_CASE("Properties can be printed and formatted", "[property]") {
   const Config c;
 
   std::ostringstream os;
   os << c.m_int << " " << c.m_string;
   CHECK(os.str() == "3 text");
+
+  CHECK(fmt::format("{} {} {}", c.m_int, c.m_string, c.m_float) == "3 text 1.5");
+  CHECK(fmt::format("{:>4}", c.m_int) == "   3");
+  CHECK(fmt::format("{}", c.m_ints) == "[1, 2, 3]");
+  CHECK(fmt::format("{}", c.m_strings) == R"(["a", "b"])");
+}
+
+namespace {
+template <class P>
+concept Collection = requires(const P& p) {
+  p.begin();
+  p.end();
+  p.size();
+  p.empty();
+};
+template <class P>
+concept Streamable = requires(std::ostream& os, const P& p) { os << p; };
+template <class T> using Prop = Configurable::Property<T>;
+} // namespace
+
+TEST_CASE("Properties only provide collection helpers for collections", "[property]") {
+  STATIC_REQUIRE_FALSE(Collection<Prop<int>>);
+  STATIC_REQUIRE_FALSE(Collection<Prop<double>>);
+  STATIC_REQUIRE(Collection<Prop<std::string>>);
+  STATIC_REQUIRE(Collection<Prop<std::vector<int>>>);
+
+  STATIC_REQUIRE_FALSE(fmt::is_range<Prop<std::vector<int>>, char>::value);
+
+  STATIC_REQUIRE(Streamable<Prop<int>>);
+  STATIC_REQUIRE_FALSE(Streamable<Prop<Mode>>);
 }
 
 TEST_CASE("Properties of containers expose container access", "[property]") {
@@ -156,6 +190,8 @@ TEST_CASE("Properties of containers expose container access", "[property]") {
   CHECK(cc.m_ints[1] == 2);
   CHECK(c.m_ints[2] == 3);
   CHECK(cc.m_string.length() == 4);
+  CHECK(cc.m_string.find("xt") == 2);
+  CHECK(cc.m_string[0] == 't');
   CHECK(std::vector<int>(cc.m_ints.begin(), cc.m_ints.end()) == std::vector<int>{1, 2, 3});
   CHECK(std::vector<int>(c.m_ints.begin(), c.m_ints.end()) == std::vector<int>{1, 2, 3});
 
@@ -179,15 +215,24 @@ TEST_CASE("Properties are accessible through PropertyBase", "[property]") {
   auto& base = c.getProperties().at("uint");
 
   base.set(uint64_t{9});
-  CHECK((c.m_uint == 9u));
+  CHECK(c.m_uint == 9u);
   CHECK(std::get<uint64_t>(base.get()) == 9);
 }
 
-// Known bug: setProperty deduces a reference type for lvalues, which is not upcast, so an
-// int lvalue is stored as int32_t instead of int64_t and setting the property throws
-TEST_CASE("Properties can be set from lvalues", "[property][!shouldfail]") {
+TEST_CASE("Properties can be set from lvalues", "[property]") {
   Config c;
-  const int value = 7;
-  c.setProperty("int", value);
-  CHECK((c.m_int == 7));
+  const int i = 7;
+  float f     = 0.5f;
+  std::string text{"lvalue"};
+  const char* chars = "chars";
+
+  c.setProperty("int", i);
+  c.setProperty("float", f);
+  c.setProperty("string", text);
+  CHECK(c.m_int == 7);
+  CHECK(c.m_float == 0.5f);
+  CHECK(c.m_string == "lvalue");
+
+  c.setProperty("string", chars);
+  CHECK(c.m_string == "chars");
 }
