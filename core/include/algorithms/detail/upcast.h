@@ -31,7 +31,8 @@ struct upcast_type<String, std::enable_if_t<std::is_convertible_v<String, std::s
 };
 template <> struct upcast_type<bool> { using type = bool; };
 
-template <class T> using upcast_type_t = typename upcast_type<T>::type;
+// references and cv-qualifiers are removed first, so lvalues upcast as their value type
+template <class T> using upcast_type_t = typename upcast_type<std::remove_cvref_t<T>>::type;
 
 template <class T> upcast_type_t<T> upcast(T&& value) { return value; }
 
