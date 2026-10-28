@@ -6,6 +6,7 @@
 #include <algorithms/geo.h>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <DD4hep/Detector.h>
 
@@ -65,19 +66,17 @@ TEST_CASE("GeoSvc uses a pre-initialized detector", "[geo]") {
   CHECK(svc.cellIDPositionConverter().get() != converter);
 }
 
-// Known bug: GeoSvc::init does not handle an empty list of compact files (see TODO),
-// and silently initializes an empty detector without a valid world volume
-TEST_CASE("GeoSvc self-initializes without compact files", "[geo][!shouldfail]") {
+TEST_CASE("GeoSvc requires compact files in standalone mode", "[geo]") {
+  capture();
   auto& svc = GeoSvc::instance();
   svc.setProperty("detectors", std::vector<std::string>{});
-  svc.init();
 
-  CHECK(svc.world().isValid());
-  CHECK(svc.cellIDPositionConverter().get() != nullptr);
+  CHECK_THROWS_AS(svc.init(), ServiceError);
+  CHECK_THROWS_WITH(svc.init(), "No external detector provided and no compact files specified "
+                                "in the 'detectors' property");
 }
 
-// Known bug: GeoSvc::init logs the literal "name" instead of the compact file name
-TEST_CASE("GeoSvc logs the compact files it loads", "[geo][!shouldfail]") {
+TEST_CASE("GeoSvc logs the compact files it loads", "[geo]") {
   capture();
   auto& svc = GeoSvc::instance();
   svc.setProperty("detectors", std::vector<std::string>{kCompactFile});
