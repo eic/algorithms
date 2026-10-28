@@ -83,6 +83,10 @@ int dummy() {
       "myAlgo", {"int", "double"}, {"moredouble", "variable"}, "Test algo"};
   fmt::print("Algo input: {}\n", a.inputNames());
   fmt::print("Algo output: {}\n", a.outputNames());
+  Algorithm<Input<std::optional<int>, std::vector<std::optional<double>>>, Output<double>> b{
+      "myOptionalAlgo", {"maybeInt", "maybeDoubles"}, {"double"}, "Test algo with optionals"};
+  fmt::print("Algo input: {}\n", b.inputNames());
+  fmt::print("Algo output: {}\n", b.outputNames());
   // The following won't compile as the number of strings (variable names) and
   // input/output tuples don't match
   // Algorithm<Input<int, double>, Output<double, std::vector<double>>> a{
