@@ -5,6 +5,7 @@
 //   - T              --> exactly one argument, NOT allowed to be null
 //   - std::optional<T> --> exactly one argument, allowed to be null
 //   - std::vector<T>   --> N >= 0 arguments, NOT allowed to be null
+//   - std::vector<std::optional<T>> --> N >= 0 arguments, each allowed to be null
 // Inputs are passed as pointers to const, outputs as pointers to mutable data.
 //
 #include <algorithms/type_traits.h>
@@ -44,16 +45,19 @@ TEMPLATE_TEST_CASE("Argument types are classified by the type traits", "[type_tr
   SECTION("required") {
     STATIC_REQUIRE_FALSE(is_optional_v<T>);
     STATIC_REQUIRE_FALSE(is_vector_v<T>);
+    STATIC_REQUIRE_FALSE(is_vector_of_optional_v<T>);
     STATIC_REQUIRE(std::is_same_v<data_type_t<T>, T>);
   }
   SECTION("optional") {
     STATIC_REQUIRE(is_optional_v<std::optional<T>>);
     STATIC_REQUIRE_FALSE(is_vector_v<std::optional<T>>);
+    STATIC_REQUIRE_FALSE(is_vector_of_optional_v<std::optional<T>>);
     STATIC_REQUIRE(std::is_same_v<data_type_t<std::optional<T>>, T>);
   }
   SECTION("vector") {
     STATIC_REQUIRE(is_vector_v<std::vector<T>>);
     STATIC_REQUIRE_FALSE(is_optional_v<std::vector<T>>);
+    STATIC_REQUIRE_FALSE(is_vector_of_optional_v<std::vector<T>>);
     STATIC_REQUIRE(std::is_same_v<data_type_t<std::vector<T>>, T>);
   }
   SECTION("vector with custom allocator") {
@@ -61,6 +65,24 @@ TEMPLATE_TEST_CASE("Argument types are classified by the type traits", "[type_tr
     STATIC_REQUIRE(is_vector_v<V>);
     STATIC_REQUIRE_FALSE(is_optional_v<V>);
     STATIC_REQUIRE(std::is_same_v<data_type_t<V>, T>);
+  }
+  SECTION("vector of optional") {
+    using V = std::vector<std::optional<T>>;
+    STATIC_REQUIRE(is_vector_v<V>);
+    STATIC_REQUIRE_FALSE(is_optional_v<V>);
+    STATIC_REQUIRE(is_vector_of_optional_v<V>);
+    STATIC_REQUIRE(std::is_same_v<data_type_t<V>, T>);
+  }
+  SECTION("vector of optional with custom allocator") {
+    using V = std::vector<std::optional<T>, TestAllocator<std::optional<T>>>;
+    STATIC_REQUIRE(is_vector_v<V>);
+    STATIC_REQUIRE(is_vector_of_optional_v<V>);
+    STATIC_REQUIRE(std::is_same_v<data_type_t<V>, T>);
+  }
+  SECTION("vector of optional const") {
+    using V = std::vector<std::optional<const T>>;
+    STATIC_REQUIRE(is_vector_of_optional_v<V>);
+    STATIC_REQUIRE(std::is_same_v<data_type_t<V>, const T>);
   }
 }
 
@@ -87,6 +109,15 @@ TEMPLATE_TEST_CASE("Input arguments map to read-only pointers", "[type_traits]",
     STATIC_REQUIRE(std::is_same_v<pointee_t<E>, const T>);
     STATIC_REQUIRE_FALSE(std::is_constructible_v<E, std::nullptr_t>);
   }
+  SECTION("vector of optional") {
+    using I = input_type_t<std::vector<std::optional<T>>>;
+    using E = typename std::remove_const_t<I>::value_type;
+    STATIC_REQUIRE(std::is_same_v<I, const std::vector<const T*>>);
+    STATIC_REQUIRE(std::is_same_v<pointee_t<E>, const T>);
+    STATIC_REQUIRE(std::is_constructible_v<E, std::nullptr_t>);
+    STATIC_REQUIRE(std::is_same_v<input_type_t<std::vector<std::optional<const T>>>,
+                                  const std::vector<const T*>>);
+  }
 }
 
 TEMPLATE_TEST_CASE("Output arguments map to mutable pointers", "[type_traits]",
@@ -111,5 +142,12 @@ TEMPLATE_TEST_CASE("Output arguments map to mutable pointers", "[type_traits]",
     STATIC_REQUIRE(std::is_same_v<O, const std::vector<gsl::not_null<T*>>>);
     STATIC_REQUIRE(std::is_same_v<pointee_t<E>, T>);
     STATIC_REQUIRE_FALSE(std::is_constructible_v<E, std::nullptr_t>);
+  }
+  SECTION("vector of optional") {
+    using O = output_type_t<std::vector<std::optional<T>>>;
+    using E = typename std::remove_const_t<O>::value_type;
+    STATIC_REQUIRE(std::is_same_v<O, const std::vector<T*>>);
+    STATIC_REQUIRE(std::is_same_v<pointee_t<E>, T>);
+    STATIC_REQUIRE(std::is_constructible_v<E, std::nullptr_t>);
   }
 }

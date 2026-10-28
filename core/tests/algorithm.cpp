@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Wouter Deconinck
 //
 // Tests for Input<T...>, Output<T...> and the Algorithm base class, with required (T),
-// optional (std::optional<T>) and vector (std::vector<T>) arguments.
+// optional (std::optional<T>), vector (std::vector<T>) and vector of optional
+// (std::vector<std::optional<T>>) arguments.
 //
 #include <algorithms/algorithm.h>
 
@@ -218,22 +219,104 @@ TEST_CASE("Algorithm processes all argument types", "[algorithm]") {
 
 namespace {
 
+// Sums the present entries of a vector of optional inputs, and writes the sum to each
+// present entry of a vector of optional outputs
+class SumOptionals : public Algorithm<Input<std::optional<int>, std::vector<std::optional<double>>>,
+                                      Output<std::vector<std::optional<double>>>> {
+public:
+  SumOptionals()
+      : Algorithm{"SumOptionals",
+                  {"maybeInt", "maybeDoubles"},
+                  {"maybeSums"},
+                  "Sums all present inputs into all present outputs"} {}
+
+  void process(const Input& input, const Output& output) const final {
+    const auto& [maybe_int, maybe_doubles] = input;
+    const auto& [maybe_sums]               = output;
+
+    double sum = (maybe_int != nullptr) ? *maybe_int : 0;
+    for (const auto* value : maybe_doubles) {
+      if (value != nullptr) {
+        sum += *value;
+      }
+    }
+    for (auto* out : maybe_sums) {
+      if (out != nullptr) {
+        *out = sum;
+      }
+    }
+  }
+};
+
+} // namespace
+
+TEST_CASE("Input and Output support vectors of optional arguments", "[algorithm]") {
+  using In  = SumOptionals::input_type;
+  using Out = SumOptionals::output_type;
+  STATIC_REQUIRE(
+      std::is_same_v<In::value_type, std::tuple<const int*, const std::vector<const double*>>>);
+  STATIC_REQUIRE(std::is_same_v<Out::value_type, std::tuple<const std::vector<double*>>>);
+  STATIC_REQUIRE(
+      std::is_same_v<In::data_type,
+                     std::tuple<std::optional<int>, std::vector<std::optional<double>>>>);
+}
+
+TEST_CASE("Algorithm processes vectors of optional arguments", "[algorithm]") {
+  const SumOptionals algo;
+  CHECK(algo.inputNames() == SumOptionals::InputNames{"maybeInt", "maybeDoubles"});
+  CHECK(algo.outputNames() == SumOptionals::OutputNames{"maybeSums"});
+
+  const int i    = 1;
+  const double a = 2.;
+  const double b = 4.;
+  double x       = 0.;
+  double y       = 0.;
+
+  SECTION("all entries present") {
+    algo.process({&i, {&a, &b}}, {{&x, &y}});
+    CHECK(x == 7.);
+    CHECK(y == 7.);
+  }
+
+  SECTION("some entries absent") {
+    algo.process({nullptr, {nullptr, &b, nullptr}}, {{nullptr, &y}});
+    CHECK(x == 0.);
+    CHECK(y == 4.);
+  }
+
+  SECTION("all entries absent") {
+    algo.process({nullptr, {nullptr, nullptr}}, {{nullptr, nullptr}});
+    CHECK(x == 0.);
+    CHECK(y == 0.);
+  }
+
+  SECTION("no entries") {
+    algo.process({&i, {}}, {{}});
+    CHECK(x == 0.);
+    CHECK(y == 0.);
+  }
+}
+
+namespace {
+
 using Particles = edm4hep::MCParticleCollection;
 
-// Merges particles from a required, an optional, and a vector of collections
+// Merges particles from a required, an optional, a vector, and a vector of optional collections
 class MergeParticles
-    : public Algorithm<Input<Particles, std::optional<Particles>, std::vector<Particles>>,
+    : public Algorithm<Input<Particles, std::optional<Particles>, std::vector<Particles>,
+                             std::vector<std::optional<Particles>>>,
                        Output<Particles>> {
 public:
   MergeParticles()
       : Algorithm{"MergeParticles",
-                  {"requiredParticles", "optionalParticles", "otherParticles"},
+                  {"requiredParticles", "optionalParticles", "otherParticles",
+                   "optionalOtherParticles"},
                   {"mergedParticles"},
                   "Merges particles from all input collections"} {}
 
   void process(const Input& input, const Output& output) const final {
-    const auto& [required, optional, others] = input;
-    const auto& [merged]                     = output;
+    const auto& [required, optional, others, optional_others] = input;
+    const auto& [merged]                                      = output;
 
     copy(*required, *merged);
     if (optional != nullptr) {
@@ -241,6 +324,11 @@ public:
     }
     for (const auto& other : others) {
       copy(*other, *merged);
+    }
+    for (const auto* other : optional_others) {
+      if (other != nullptr) {
+        copy(*other, *merged);
+      }
     }
   }
 
@@ -277,21 +365,27 @@ TEST_CASE("Algorithm processes all argument types of EDM collections", "[algorit
   const auto optional = makeParticles({22, 22});
   const auto other1   = makeParticles({2212});
   const auto other2   = makeParticles({2112, -211});
+  const auto other3   = makeParticles({13});
 
   Particles merged;
 
   SECTION("all arguments present") {
-    algo.process({&required, &optional, {&other1, &other2}}, {&merged});
-    CHECK(pdgs(merged) == std::vector<int>{11, 22, 22, 2212, 2112, -211});
+    algo.process({&required, &optional, {&other1, &other2}, {&other3}}, {&merged});
+    CHECK(pdgs(merged) == std::vector<int>{11, 22, 22, 2212, 2112, -211, 13});
   }
 
   SECTION("optional input absent") {
-    algo.process({&required, nullptr, {&other1, &other2}}, {&merged});
+    algo.process({&required, nullptr, {&other1, &other2}, {}}, {&merged});
     CHECK(pdgs(merged) == std::vector<int>{11, 2212, 2112, -211});
   }
 
   SECTION("vector input empty") {
-    algo.process({&required, &optional, {}}, {&merged});
+    algo.process({&required, &optional, {}, {}}, {&merged});
     CHECK(pdgs(merged) == std::vector<int>{11, 22, 22});
+  }
+
+  SECTION("vector of optional input with absent entries") {
+    algo.process({&required, nullptr, {}, {nullptr, &other3, nullptr}}, {&merged});
+    CHECK(pdgs(merged) == std::vector<int>{11, 13});
   }
 }
