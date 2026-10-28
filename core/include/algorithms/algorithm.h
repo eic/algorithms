@@ -8,13 +8,16 @@
 //   - Normal data type T
 //   - Optional data type std::optional<T>
 //   - Vector of normal data std::vector<T>
+//   - Vector of optional data std::vector<std::optional<T>>
 //
 // For input data, this then selects:
-//   - T           --> gsl::not_null<const T*> (NOT allowed to be null)
-//   - optional<T> --> const T* (allowed to be null)
-//   - vector<T>   --> std::vector<gsl::not_null<const T*>> (N arguments, NOT allowed to
-//                                                           be null, but can be zero
-//                                                           length)
+//   - T                   --> gsl::not_null<const T*> (NOT allowed to be null)
+//   - optional<T>         --> const T* (allowed to be null)
+//   - vector<T>           --> std::vector<gsl::not_null<const T*>> (N arguments, NOT allowed
+//                                                                   to be null, but can be
+//                                                                   zero length)
+//   - vector<optional<T>> --> std::vector<const T*> (N arguments, each allowed to be null,
+//                                                    and can be zero length)
 //
 // Same for output data, but replace `const T*` with `T*` (mutable) everywhere.
 //
@@ -46,7 +49,8 @@
 namespace algorithms {
 
 // T should either be the desired input type, a std::vector<> of the desired input type,
-// or a std::optional<> of the desired input type
+// a std::optional<> of the desired input type, or a std::vector<std::optional<>> of the
+// desired input type
 template <class... T> struct Input : std::tuple<input_type_t<T>...> {
   constexpr static const size_t kSize = sizeof...(T);
   using value_type                    = std::tuple<input_type_t<T>...>;
