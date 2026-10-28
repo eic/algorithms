@@ -20,12 +20,18 @@ void RandomSvc::init(const RandomEngineCB& gen) {
   }
 }
 RandomEngineCB RandomSvc::createEngine(const size_t seed) {
-  return [=](const size_t size) {
-    static std::mutex m;
-    static std::mt19937_64 gen{seed};
-    std::lock_guard<std::mutex> lock{m};
-    std::vector<value_type> ret{size};
-    std::generate(ret.begin(), ret.end(), gen);
+  // Each engine has its own state, shared by all copies of the callback
+  struct Engine {
+    std::mutex m;
+    std::mt19937_64 gen;
+  };
+  auto engine = std::make_shared<Engine>();
+  engine->gen.seed(seed);
+  return [engine](const size_t size) {
+    std::lock_guard<std::mutex> lock{engine->m};
+    std::vector<value_type> ret(size);
+    // pass the generator by reference, so its state advances
+    std::generate(ret.begin(), ret.end(), std::ref(engine->gen));
     return ret;
   };
 }

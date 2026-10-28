@@ -4,6 +4,7 @@
 #include <concepts>
 #include <cstdint>
 #include <functional>
+#include <memory>
 #include <mutex>
 #include <random>
 
@@ -38,7 +39,7 @@ public:
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <std::integral Int = int> Int poisson(const Int mean = Int{1}) const {
+  template <std::integral Int = int> Int poisson(const double mean = 1.) const {
     std::poisson_distribution<Int> d{mean};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
@@ -93,12 +94,18 @@ private:
   RandomEngineCB createEngine(const size_t seed = 1);
 #endif
   RandomEngineCB createEngine(const size_t seed = 1) {
-    return [=](const size_t size) {
-      static std::mutex m;
-      static std::mt19937_64 gen{seed};
-      std::lock_guard<std::mutex> lock{m};
+    // Each engine has its own state, shared by all copies of the callback
+    struct Engine {
+      std::mutex m;
+      std::mt19937_64 gen;
+    };
+    auto engine = std::make_shared<Engine>();
+    engine->gen.seed(seed);
+    return [engine](const size_t size) {
+      std::lock_guard<std::mutex> lock{engine->m};
       std::vector<value_type> ret(size);
-      std::generate(ret.begin(), ret.end(), gen);
+      // pass the generator by reference, so its state advances
+      std::generate(ret.begin(), ret.end(), std::ref(engine->gen));
       return ret;
     };
   }
