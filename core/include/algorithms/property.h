@@ -220,7 +220,7 @@ std::ostream& operator<<(std::ostream& os, const algorithms::Configurable::Prope
   return os << p.value();
 }
 
-// Make Property formateble, as its value (also for collections, which are not formatted
+// Make Property formattable, as its value (also for collections, which are not formatted
 // as a range of the Property itself)
 template <class T>
 struct fmt::formatter<algorithms::Configurable::Property<T>> : fmt::formatter<T> {
