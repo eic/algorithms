@@ -12,6 +12,7 @@
 #include <fmt/ranges.h>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
 
 #include <algorithms/error.h>
@@ -79,6 +80,7 @@ public:
   template <class Svc>
   void registerService(
       ServiceBase* svc, const std::function<void(Svc&)>& init = [](Svc& s) { s.init(); }) {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     m_keys.push_back(Svc::kName);
     m_services[Svc::kName] = svc;
     // only add initializer if not already present (e.g. if for some reason the framework did
@@ -89,22 +91,28 @@ public:
   }
   // call init if we are already in an initialized state (this is a straggler)
   template <class Svc> void initStraggler() {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     if (m_init && !m_services.at(Svc::kName)->ready()) {
       initSingle<Svc>();
       validate();
     }
   }
 
-  template <class Svc> bool has() const { return m_services.count(Svc::kName); }
+  template <class Svc> bool has() const {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
+    return m_services.count(Svc::kName);
+  }
   // The initializer gets the registered service, so it does not need Svc::instance(), which
   // may still be under construction
   template <class Svc> void setInit(const std::function<void(Svc&)>& init) {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     m_initializers[Svc::kName] = [init](ServiceBase* svc) { init(*static_cast<Svc*>(svc)); };
   }
 
   // Loop over all services in order and initialize one-by-one
   // Finalize by validating that all is well
   void init() {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     // ensure we only call init once
     if (m_init) {
       throw ServiceError("Cannot initialize services twice");
@@ -134,6 +142,7 @@ public:
   }
   // Single service init (meant to be called for stragglers after general init)
   template <class Svc> void initSingle() {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     std::string_view name = Svc::kName;
     if (!m_init) {
       throw ServiceError(
@@ -151,11 +160,13 @@ public:
   }
 
   template <class Svc = ServiceBase> Svc* service(std::string_view name) const {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     return static_cast<Svc*>(m_services.at(name));
   }
   // Check if all service properties are set
   // TODO FIXME move to implementation file
   void validate() const {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     std::map<std::string_view, std::vector<std::string_view>> missing_props;
     std::vector<std::string_view> not_initialized;
     for (std::string_view name : m_keys) {
@@ -179,8 +190,10 @@ public:
       }
     }
   }
+  // Not protected against concurrent registration of new services
   const auto& services() const { return m_services; }
   bool ready() const {
+    std::lock_guard<std::recursive_mutex> lock{m_mutex};
     for (const auto& key : m_keys) {
       if (!m_services.at(key)->ready()) {
         return false;
@@ -201,6 +214,9 @@ private:
   std::map<std::string_view, ServiceBase*> m_services; // Map of services for easier lookup
   std::map<std::string_view, std::function<void(ServiceBase*)>> m_initializers; // Init calls
   bool m_init = false; // did we initialize the services already?
+  // Services may be accessed for the first time from several threads concurrently. Recursive,
+  // as initializers can access (and thereby register) other services.
+  mutable std::recursive_mutex m_mutex;
 };
 
 // Thread-safe lazy-evaluated minimal service system

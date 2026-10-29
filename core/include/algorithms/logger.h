@@ -13,6 +13,7 @@
 #include <functional>
 #include <ios>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <ostream>
 #include <sstream>
@@ -105,18 +106,26 @@ namespace detail {
     const LogSvc& m_logger;
   };
   // thread-safe output stream for the logger
+  // The caller name must outlive the stream. The output buffer is only created when something
+  // is written above threshold, so suppressed messages are cheap. Unflushed output is reported
+  // when the stream is destroyed.
   class LoggerStream {
   public:
     LoggerStream(std::string_view caller, const LogLevel level,
                  const LogLevel threshold = LogSvc::instance().defaultLevel())
-        : m_buffer{level, caller}, m_os{&m_buffer}, m_level{level}, m_threshold{threshold} {}
+        : m_caller{caller}, m_level{level}, m_threshold{threshold} {}
     LoggerStream()                    = delete;
     LoggerStream(const LoggerStream&) = delete;
+    ~LoggerStream() {
+      if (m_impl && !m_impl->buffer.str().empty()) {
+        m_impl->os.flush();
+      }
+    }
 
     template <class Arg> LoggerStream& operator<<(Arg&& streamable) {
       if (m_level >= m_threshold) {
         std::lock_guard<std::mutex> lock{m_mutex};
-        m_os << std::forward<Arg>(streamable);
+        os() << std::forward<Arg>(streamable);
         return *this;
       }
       return *this;
@@ -128,7 +137,7 @@ namespace detail {
     LoggerStream& operator<<(IOManipType1* f) {
       if (m_level >= m_threshold) {
         std::lock_guard<std::mutex> lock{m_mutex};
-        f(m_os);
+        f(os());
         return *this;
       }
       return *this;
@@ -136,7 +145,7 @@ namespace detail {
     LoggerStream& operator<<(IOManipType2* f) {
       if (m_level >= m_threshold) {
         std::lock_guard<std::mutex> lock{m_mutex};
-        f(m_os);
+        f(os());
         return *this;
       }
       return *this;
@@ -145,9 +154,21 @@ namespace detail {
     void threshold(const LogLevel th) { m_threshold = th; }
 
   private:
+    struct Impl {
+      Impl(const LogLevel level, std::string_view caller) : buffer{level, caller}, os{&buffer} {}
+      LoggerBuffer buffer;
+      std::ostream os;
+    };
+    std::ostream& os() {
+      if (!m_impl) {
+        m_impl = std::make_unique<Impl>(m_level, m_caller);
+      }
+      return m_impl->os;
+    }
+
     std::mutex m_mutex;
-    LoggerBuffer m_buffer;
-    std::ostream m_os;
+    std::string_view m_caller;
+    std::unique_ptr<Impl> m_impl;
     const LogLevel m_level;
     LogLevel m_threshold;
   };
@@ -157,32 +178,26 @@ namespace detail {
 class LoggerMixin {
 public:
   LoggerMixin(std::string_view caller, const LogLevel threshold = LogSvc::instance().defaultLevel())
-      : m_caller{caller}, m_logger{LogSvc::instance()} {
-    level(threshold);
-  }
+      : m_caller{caller}, m_level{threshold}, m_logger{LogSvc::instance()} {}
+  LoggerMixin(const LoggerMixin&)            = delete;
+  LoggerMixin& operator=(const LoggerMixin&) = delete;
 
 public:
   // Not done through Properties, as that would require entanglement with the
   // PropertyMixin which is not appropriate here. It's the FW responsibility to set this
   // on the algorithm level if desired, before or during the init() stage.
-  void level(const LogLevel threshold) {
-    m_level = threshold;
-    m_critical.threshold(m_level);
-    m_error.threshold(m_level);
-    m_warning.threshold(m_level);
-    m_info.threshold(m_level);
-    m_debug.threshold(m_level);
-    m_trace.threshold(m_level);
-  }
+  void level(const LogLevel threshold) { m_level = threshold; }
   LogLevel level() const { return m_level; }
 
 protected:
-  detail::LoggerStream& critical() const { return m_critical; }
-  detail::LoggerStream& error() const { return m_error; }
-  detail::LoggerStream& warning() const { return m_warning; }
-  detail::LoggerStream& info() const { return m_info; }
-  detail::LoggerStream& debug() const { return m_debug; }
-  detail::LoggerStream& trace() const { return m_trace; }
+  // Each call returns a new stream, so messages composed concurrently from several threads
+  // (e.g. in a shared algorithm) do not get mixed up
+  detail::LoggerStream critical() const { return stream(LogLevel::kCritical); }
+  detail::LoggerStream error() const { return stream(LogLevel::kError); }
+  detail::LoggerStream warning() const { return stream(LogLevel::kWarning); }
+  detail::LoggerStream info() const { return stream(LogLevel::kInfo); }
+  detail::LoggerStream debug() const { return stream(LogLevel::kDebug); }
+  detail::LoggerStream trace() const { return stream(LogLevel::kTrace); }
 
   void critical(std::string_view msg) const { report<LogLevel::kCritical>(msg); }
   void error(std::string_view msg) const { report<LogLevel::kError>(msg); }
@@ -244,15 +259,10 @@ private:
       m_logger.report(l, m_caller, msg);
     }
   }
+  detail::LoggerStream stream(const LogLevel l) const { return {m_caller, l, m_level}; }
 
   const std::string m_caller;
   LogLevel m_level;
-  mutable detail::LoggerStream m_critical{m_caller, LogLevel::kCritical};
-  mutable detail::LoggerStream m_error{m_caller, LogLevel::kError};
-  mutable detail::LoggerStream m_warning{m_caller, LogLevel::kWarning};
-  mutable detail::LoggerStream m_info{m_caller, LogLevel::kInfo};
-  mutable detail::LoggerStream m_debug{m_caller, LogLevel::kDebug};
-  mutable detail::LoggerStream m_trace{m_caller, LogLevel::kTrace};
 
   const LogSvc& m_logger;
 };
