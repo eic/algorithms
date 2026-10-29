@@ -55,6 +55,41 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=deprecated-declarations)
 endif()
 
+# Sanitizers (the runtime options used for the tests in CI are set in
+# .github/workflows/linux-eic-shell.yml, with suppressions in .github/*.supp)
+include(CheckCXXCompilerFlag)
+
+# Address sanitizer
+option(USE_ASAN "Compile with address sanitizer" OFF)
+if(USE_ASAN)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g -O1)
+  add_link_options(-fsanitize=address)
+endif()
+
+# Thread sanitizer
+option(USE_TSAN "Compile with thread sanitizer" OFF)
+if(USE_TSAN)
+  if(USE_ASAN)
+    message(FATAL_ERROR "USE_TSAN cannot be combined with USE_ASAN")
+  endif()
+  add_compile_options(-fsanitize=thread -g -O1)
+  add_link_options(-fsanitize=thread)
+endif()
+
+# Undefined behavior sanitizer
+option(USE_UBSAN "Compile with undefined behavior sanitizer" OFF)
+if(USE_UBSAN)
+  foreach(sanitizer undefined float-divide-by-zero unsigned-integer-overflow
+                    implicit-conversion local-bounds nullability)
+    check_cxx_compiler_flag("-fsanitize=${sanitizer}" CXX_COMPILER_HAS_sanitize_${sanitizer})
+    if(CXX_COMPILER_HAS_sanitize_${sanitizer})
+      add_compile_options(-fsanitize=${sanitizer})
+      add_link_options(-fsanitize=${sanitizer})
+    endif()
+  endforeach()
+  add_compile_options(-fno-omit-frame-pointer -g -O1)
+endif()
+
 # Install to the top directory by default
 if( ${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT} )
     set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR} CACHE PATH "Install in top directory by default" FORCE)
