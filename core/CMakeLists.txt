@@ -11,6 +11,11 @@ set(TARGETS ${TARGETS} ${LIBRARY} PARENT_SCOPE)
 
 file(GLOB SRC CONFIGURE_DEPENDS src/*.cpp)
 
+# Generate the version header in the build tree (installed below)
+configure_file(version.h.in
+  ${PROJECT_BINARY_DIR}/${SUBDIR}/include/algorithms/version.h
+  @ONLY)
+
 add_library(${LIBRARY} SHARED ${SRC})
 add_library(algorithms::${LIBRARY} ALIAS ${LIBRARY})
 target_link_libraries(${LIBRARY}
@@ -23,6 +28,7 @@ target_link_libraries(${LIBRARY}
 target_include_directories(${LIBRARY}
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/${SUBDIR}/include>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/${SUBDIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${LIBRARY} PROPERTIES
   OUTPUT_NAME algo${SUBDIR}
@@ -38,6 +44,8 @@ install(TARGETS ${LIBRARY}
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/${SUBDIR}/include/algorithms
 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT dev)
+install(FILES ${PROJECT_BINARY_DIR}/${SUBDIR}/include/algorithms/version.h
+DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/algorithms COMPONENT dev)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
