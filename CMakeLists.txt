@@ -115,5 +115,29 @@ include(algorithmsComponentsHelpers) # handle components via add_..._if commands
 
 add_component(core Core)
 
+# Documentation (doxygen is run from the source directory with relative paths,
+# so the configured Doxyfile can also be used outside of the build environment)
+file(RELATIVE_PATH CMAKE_CURRENT_BINARY_RELATIVE_DIR
+  ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+  @ONLY)
+
+option(GENERATE_DOCS "Generate the doxygen API reference" OFF)
+if(GENERATE_DOCS)
+  find_package(Doxygen COMPONENTS dot)
+  if(DOXYGEN_FOUND)
+    add_custom_target(docs ALL
+      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+      COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+      COMMENT "Generating API documentation with Doxygen"
+      VERBATIM)
+  else()
+    message(STATUS "Doxygen not found; no documentation will be built.")
+  endif()
+endif()
+
 # create cmake configuration files
 include(algorithmsCreatePackageConfig)

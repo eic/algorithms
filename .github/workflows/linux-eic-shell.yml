@@ -101,6 +101,45 @@ jobs:
           ccache --evict-older-than 7d
           ctest --test-dir build --output-on-failure
 
+  build-docs:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - uses: cvmfs-contrib/github-action-cvmfs@v5
+    - name: Generate documentation
+      uses: eic/run-cvmfs-osg-eic-shell@main
+      with:
+        organization: "${{ env.organization }}"
+        platform-release: "${{ env.platform }}:${{ env.release }}"
+        run: |
+          cmake -B build -S . -DBUILD_TESTING=OFF -DGENERATE_DOCS=ON
+          cmake --build build --target docs
+    - uses: actions/upload-artifact@v7
+      with:
+        name: docs
+        path: build/docs/html/
+        if-no-files-found: error
+    - uses: actions/upload-pages-artifact@v5
+      if: github.ref == 'refs/heads/main'
+      with:
+        path: build/docs/html/
+        retention-days: 7
+
+  deploy-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
+
   sanitizers:
     name: sanitizers (${{ matrix.SANITIZER }})
     runs-on: ubuntu-24.04
