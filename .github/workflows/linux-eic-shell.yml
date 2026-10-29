@@ -83,9 +83,9 @@ jobs:
         echo "cache_dir=${{ github.workspace }}/.ccache" > ~/.ccache/ccache.conf
         echo "max_size=500MB" >> ~/.ccache/ccache.conf
         echo "compression=true" >> ~/.ccache/ccache.conf
-    - uses: cvmfs-contrib/github-action-cvmfs@v5
+    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
     - name: Build, install and test
-      uses: eic/run-cvmfs-osg-eic-shell@main
+      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
       with:
         organization: "${{ env.organization }}"
         platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -100,6 +100,45 @@ jobs:
           ccache --show-stats --verbose
           ccache --evict-older-than 7d
           ctest --test-dir build --output-on-failure
+
+  build-docs:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v7
+    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
+    - name: Generate documentation
+      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
+      with:
+        organization: "${{ env.organization }}"
+        platform-release: "${{ env.platform }}:${{ env.release }}"
+        run: |
+          cmake -B build -S . -DBUILD_TESTING=OFF -DGENERATE_DOCS=ON
+          cmake --build build --target docs
+    - uses: actions/upload-artifact@v7
+      with:
+        name: docs
+        path: build/docs/html/
+        if-no-files-found: error
+    - uses: actions/upload-pages-artifact@v5
+      if: github.ref == 'refs/heads/main'
+      with:
+        path: build/docs/html/
+        retention-days: 7
+
+  deploy-docs:
+    needs: build-docs
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v5
 
   sanitizers:
     name: sanitizers (${{ matrix.SANITIZER }})
@@ -142,9 +181,9 @@ jobs:
         echo "cache_dir=${{ github.workspace }}/.ccache" > ~/.ccache/ccache.conf
         echo "max_size=500MB" >> ~/.ccache/ccache.conf
         echo "compression=true" >> ~/.ccache/ccache.conf
-    - uses: cvmfs-contrib/github-action-cvmfs@v5
+    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
     - name: Build and test
-      uses: eic/run-cvmfs-osg-eic-shell@main
+      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
       with:
         organization: "${{ env.organization }}"
         platform-release: "${{ env.platform }}:${{ env.release }}"

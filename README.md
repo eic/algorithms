@@ -17,7 +17,7 @@ This code defines a framework for creating and managing algorithms in a C++ appl
 * `AlgorithmBase`: A base class for all algorithms, providing common features like properties, logging, and naming.
 * `Algorithm<InputType, OutputType>`: A template class defining the interface for concrete algorithms. It includes methods for initialization (`init`), processing (`process`), and accessing input/output names.
 
-**3. Algorithm Service (<code>AlgorithmSvc</code>):**
+**3. Algorithm Service (`AlgorithmSvc`):**
 
 * Stores factories for creating algorithm instances.
 * Allows adding new algorithm factories (`add`).
@@ -62,3 +62,14 @@ export LSAN_OPTIONS=suppressions=$PWD/.github/lsan.supp
 export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
 export TSAN_OPTIONS=halt_on_error=1
 ```
+
+### Documentation
+
+The API reference is generated with [Doxygen](https://www.doxygen.nl) and published at <https://eic.github.io/algorithms/>. To build it locally (requires `doxygen` and `graphviz`):
+
+```bash
+cmake -B build -S . -DGENERATE_DOCS=ON
+cmake --build build --target docs
+```
+
+The HTML output is written to `build/docs/html/`. Alternatively, run `doxygen build/Doxyfile` from the source directory after configuring.
