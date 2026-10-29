@@ -55,7 +55,8 @@ if(NOT CMAKE_BUILD_TYPE MATCHES Release)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=deprecated-declarations)
 endif()
 
-# Sanitizers (runtime options and suppressions for the tests are in .github/*.supp)
+# Sanitizers (the runtime options used for the tests in CI are set in
+# .github/workflows/linux-eic-shell.yml, with suppressions in .github/*.supp)
 include(CheckCXXCompilerFlag)
 
 # Address sanitizer

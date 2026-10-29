@@ -102,6 +102,7 @@ jobs:
           ctest --test-dir build --output-on-failure
 
   sanitizers:
+    name: sanitizers (${{ matrix.SANITIZER }})
     runs-on: ubuntu-24.04
     strategy:
       matrix:
