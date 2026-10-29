@@ -11,6 +11,7 @@ if(NOT Catch2_FOUND)
   return()
 endif()
 include(Catch)
+find_package(Threads REQUIRED)
 
 # One executable per test source, so tests of process-wide singleton services
 # (ServiceSvc, LogSvc, RandomSvc, GeoSvc) do not affect each other
@@ -24,7 +25,8 @@ foreach(SRC ${TEST_SRC})
   target_link_libraries(${TEST_NAME}
     PRIVATE
       algorithms::${LIBRARY}
-      Catch2::Catch2WithMain)
+      Catch2::Catch2WithMain
+      Threads::Threads)
   target_compile_definitions(${TEST_NAME}
     PRIVATE
       TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}")

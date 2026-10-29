@@ -11,7 +11,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include <cstddef>
+#include <latch>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace algorithms;
@@ -103,4 +106,25 @@ TEST_CASE("AlgorithmSvc creates registered algorithms by type and name", "[algor
   CHECK_THROWS_WITH((svc.get<Algorithm<Input<float>, Output<float>>>("AddOne")),
                     ContainsSubstring("No factory with name AddOne"));
   CHECK_THROWS_WITH(svc.get<IntAlgorithm>(""), "Invalid name provided: ''");
+
+  // algorithms can be created, listed and added concurrently
+  constexpr std::size_t kThreads = 8;
+  std::vector<int> results(kThreads, 0);
+  {
+    std::latch start{kThreads};
+    std::vector<std::jthread> threads;
+    for (std::size_t t = 0; t < kThreads; ++t) {
+      threads.emplace_back([&svc, &start, &results, t] {
+        start.arrive_and_wait();
+        svc.add<Twice>();
+        const auto names = svc.ls<IntAlgorithm>();
+        const auto algo  = svc.get<IntAlgorithm>(names[t % names.size()]);
+        const int in     = static_cast<int>(t);
+        algo->process({&in}, {&results[t]});
+      });
+    }
+  }
+  for (std::size_t t = 0; t < kThreads; ++t) {
+    CHECK(results[t] == ((t % 2 == 0) ? static_cast<int>(t) + 1 : 2 * static_cast<int>(t)));
+  }
 }
