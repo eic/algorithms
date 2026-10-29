@@ -43,3 +43,21 @@ This code defines a framework for creating and managing algorithms in a C++ appl
 * Utilize common services like geometry and random number generation.
 
 This framework is designed to promote modularity, reusability, and maintainability of algorithms within a larger C++ application.
+
+### Testing
+
+Tests use Catch2 v3 and are built with `BUILD_TESTING=ON` (the default). Run them with:
+
+```bash
+cmake -B build -S .
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The address, undefined behavior and thread sanitizers are enabled with `-DUSE_ASAN=ON`, `-DUSE_UBSAN=ON` and `-DUSE_TSAN=ON` (ASan and UBSan can be combined; TSan cannot be combined with ASan). Use the same runtime options as CI, for example:
+
+```bash
+export LSAN_OPTIONS=suppressions=$PWD/.github/lsan.supp
+export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+export TSAN_OPTIONS=halt_on_error=1
+```

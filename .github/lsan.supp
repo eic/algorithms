@@ -1,0 +1,5 @@
+# https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer#suppressions
+
+# ROOT keeps internal allocations (e.g. from DD4hep geometry loading) alive until exit
+leak:libCore.so
+leak:libRIO.so
