@@ -163,6 +163,21 @@ TEST_CASE("LoggerMixin streams support stream manipulators", "[logger]") {
                                            {LogLevel::kInfo, "TestLogger", "255"}});
 }
 
+TEST_CASE("LoggerMixin streams report unflushed messages at the end of the statement",
+          "[logger]") {
+  capture();
+  const TestLogger logger;
+
+  logger.info() << "without endmsg " << 1;
+  logger.info() << "with endmsg" << TestLogger::endmsg;
+  logger.info() << TestLogger::endmsg;
+  logger.debug() << "suppressed without endmsg";
+
+  CHECK(messages() == std::vector<Message>{{LogLevel::kInfo, "TestLogger", "without endmsg 1"},
+                                           {LogLevel::kInfo, "TestLogger", "with endmsg"},
+                                           {LogLevel::kInfo, "TestLogger", ""}});
+}
+
 TEST_CASE("LoggerMixin reports plain messages at or above threshold", "[logger]") {
   capture();
   const TestLogger logger{LogLevel::kTrace};
