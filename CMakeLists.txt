@@ -126,17 +126,13 @@ configure_file(
 
 option(GENERATE_DOCS "Generate the doxygen API reference" OFF)
 if(GENERATE_DOCS)
-  find_package(Doxygen COMPONENTS dot)
-  if(DOXYGEN_FOUND)
-    add_custom_target(docs ALL
-      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-      COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Generating API documentation with Doxygen"
-      VERBATIM)
-  else()
-    message(STATUS "Doxygen not found; no documentation will be built.")
-  endif()
+  find_package(Doxygen REQUIRED COMPONENTS dot)
+  add_custom_target(docs ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Generating API documentation with Doxygen"
+    VERBATIM)
 endif()
 
 # create cmake configuration files
