@@ -30,10 +30,13 @@
 #pragma once
 
 #include <array>
+#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <typeindex>
 #include <typeinfo>
@@ -105,64 +108,63 @@ private:
 // compile-time code needed.
 class AlgorithmSvc : public LoggedService<AlgorithmSvc> {
 public:
+  void init() {}
+
   // Add a new factory for an algorithm with a specified type. The full demangled type name
   // will be used as identifier for the factory
   template <class Algo> void add() {
-    static std::mutex m;
-    static std::lock_guard<std::mutex> lock{m};
-    auto type            = Algo::algorithm_type;
-    std::type_index name = detail::demangledName<Algo>();
-    if (!available<type>()) {
-      m_factories[type] = {};
-    }
-    if (available<type>(name)) {
-      return; // do nothing, already there
-    }
-    m_factories[type].emplace({name, []() { return static_cast<AlgorithmBase*>(new Algo()); }});
+    using AlgoType = typename Algo::algorithm_type;
+    std::lock_guard<std::mutex> lock{m_mutex};
+    auto& factories = m_factories[typeid(AlgoType)];
+    // do nothing if already there
+    factories.try_emplace(detail::demangledName<Algo>(),
+                          []() -> std::unique_ptr<AlgorithmBase> { return std::make_unique<Algo>(); });
   }
 
   // Get a new owning pointer to an instance of an algorithm.
   // Throws if the resource isn't available, or if we aren't fully ready yet.
   template <class AlgoType> std::unique_ptr<AlgoType> get(std::string_view name) const {
     ensureReady();
-    if (!available<AlgoType>(name)) {
+    std::lock_guard<std::mutex> lock{m_mutex};
+    const auto* factory = find<AlgoType>(name);
+    if (factory == nullptr) {
       raise(fmt::format("No factory with name {} and type {} registered with the AlgorithmSvc",
-                        name, typeid(AlgoType).name()));
+                        name, detail::demangledName<AlgoType>()));
     }
-    const auto& factories = m_factories.at(typeid(AlgoType));
-    // This creates and object and gives ownership to the unique_ptr
-    return static_cast<AlgoType*>(factories.at(name)());
+    // This creates an object and gives ownership to the unique_ptr
+    return std::unique_ptr<AlgoType>(static_cast<AlgoType*>((*factory)().release()));
   }
   // Return a vector of the names of all available algorithms of a certain type
   // Just return an empty vector if no names are present (don't throw any exceptions
   // for missing entries here).
   // Throws if we aren't fully ready yet.
-  template <class AlgoType> auto ls() const {
+  template <class AlgoType> std::vector<std::string> ls() const {
     ensureReady();
-    std::vector<std::string_view> ret;
-    if (available<AlgoType>()) {
-      std::for_each(factory<AlgoType>().begin(), factory<AlgoType>().end(), std::back_inserter(ret),
-                    [](auto&& key_value_pair) { return key_value_pair.first(); });
+    std::lock_guard<std::mutex> lock{m_mutex};
+    std::vector<std::string> ret;
+    if (const auto it = m_factories.find(typeid(AlgoType)); it != m_factories.end()) {
+      for (const auto& [name, factory] : it->second) {
+        ret.push_back(name);
+      }
     }
     return ret;
   }
 
 private:
-  // Do we have any algorithms available of a certain type?
-  template <class AlgoType> bool available() const { return !m_factories.count(typeid(AlgoType)); }
-  // Do we have any algorithms of type AlgoType with a specific name available? Throws
-  // if any of the lower-level assumptions fail
-  template <class AlgoType> bool available(std::string_view name) const {
-    if (name == "") {
+  using factory_type = std::function<std::unique_ptr<AlgorithmBase>()>;
+
+  // Find the factory of type AlgoType with a specific name, or nullptr if there is none.
+  // Throws if the name is invalid
+  template <class AlgoType> const factory_type* find(std::string_view name) const {
+    if (name.empty()) {
       raise(fmt::format("Invalid name provided: '{}'", name));
     }
-    return factory<AlgoType>().count(name) != 0;
-  }
-  template <class AlgoType> const auto& factory() const {
-    if (!available<AlgoType>()) {
-      raise(fmt::format("No factory for algorithm type {} provided", typeid(AlgoType).name()));
+    const auto it = m_factories.find(typeid(AlgoType));
+    if (it == m_factories.end()) {
+      return nullptr;
     }
-    return m_factories.at(typeid(AlgoType));
+    const auto factory = it->second.find(name);
+    return (factory != it->second.end()) ? &factory->second : nullptr;
   }
   // Throw an exception if we are not ready as factory to avoid giving incomplete factory
   // information to the caller
@@ -172,9 +174,10 @@ private:
     }
   }
 
-  using factory_type = std::function<std::unique_ptr<AlgorithmBase>()>;
+  mutable std::mutex m_mutex;
+  std::map<std::type_index, std::map<std::string, factory_type, std::less<>>> m_factories;
 
-  std::map<std::type_index, std::map<std::string_view, factory_type>> m_factories;
+  ALGORITHMS_DEFINE_LOGGED_SERVICE(AlgorithmSvc)
 };
 
 namespace detail {
