@@ -32,6 +32,7 @@ This code defines a framework for creating and managing algorithms in a C++ appl
 * `Configurable` and `PropertyMixin`: Enable algorithms to have configurable properties.
 * `RandomSvc`: A service for generating random numbers using various distributions.
 * `Service<SvcType>` and `ServiceSvc`: Infrastructure for managing services as lazy-evaluated singletons.
+* `algorithms/version.h`: The library version, as preprocessor macros (`ALGORITHMS_VERSION`, `ALGORITHMS_VERSION_CODE(major, minor, patch)`, ...) for conditional compilation, and as constexpr values (`versionMajor`, `versionString`, `versionAtLeast(major, minor, patch)`, ...).
 * Type traits (`is_vector`, `is_optional`, `is_vector_of_optional`, `data_type_t`, `input_type_t`, `output_type_t`): Help with argument type deduction and mapping.
 
 **In essence, this code provides a structured way to:**
