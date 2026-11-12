@@ -85,7 +85,7 @@ jobs:
         echo "compression=true" >> ~/.ccache/ccache.conf
     - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
     - name: Build, install and test
-      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
+      uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
         organization: "${{ env.organization }}"
         platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -107,7 +107,7 @@ jobs:
     - uses: actions/checkout@v7
     - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
     - name: Generate documentation
-      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
+      uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
         organization: "${{ env.organization }}"
         platform-release: "${{ env.platform }}:${{ env.release }}"
@@ -183,7 +183,7 @@ jobs:
         echo "compression=true" >> ~/.ccache/ccache.conf
     - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
     - name: Build and test
-      uses: eic/run-cvmfs-osg-eic-shell@10a8540a01bf46c03a2b267cb122d96a1cb5c09a # main
+      uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
         organization: "${{ env.organization }}"
         platform-release: "${{ env.platform }}:${{ env.release }}"
