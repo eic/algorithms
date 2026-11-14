@@ -442,3 +442,88 @@ TEST_CASE("Properties of further types map onto PropertyValue alternatives", "[p
   CHECK(e.m_range.value() == Range{7., 8.});
   CHECK_THROWS_AS(e.setProperty("range", std::string{"bad"}), PropertyError);
 }
+
+namespace {
+
+struct BoundConfig {
+  double cut{1.5};
+  std::vector<int> layers{1, 2};
+  Sigma sigma{Sigma::kRel};
+};
+
+class Bound : public PropertyMixin {
+public:
+  BoundConfig m_cfg;
+  PropertyRef<double> m_cut{this, "cut", m_cfg.cut, "bound to a config field"};
+  PropertyRef<std::vector<int>> m_layers{this, "layers", m_cfg.layers, ""};
+  PropertyRef<Sigma> m_sigma{this, "sigma", m_cfg.sigma, ""};
+  Property<int> m_own{this, "own", 1, "an own value"};
+};
+
+} // namespace
+
+TEST_CASE("PropertyRef refers to an existing variable", "[property]") {
+  Bound b;
+  CHECK(b.hasProperty("cut"));
+  CHECK(b.m_cut == 1.5);
+  CHECK(b.getPropertyString("sigma") == "rel");
+
+  // setting the property sets the variable
+  b.setProperty("cut", 2.5);
+  CHECK(b.m_cfg.cut == 2.5);
+  b.setPropertyString("layers", "3,4,5");
+  CHECK(b.m_cfg.layers == std::vector<int>{3, 4, 5});
+
+  // changing the variable, e.g. by assigning a whole config struct, changes the property
+  b.m_cfg = BoundConfig{.cut = 0.5, .layers = {6}, .sigma = Sigma::kAbs};
+  CHECK(b.m_cut == 0.5);
+  CHECK(b.m_layers.size() == 1);
+  CHECK(std::get<std::vector<int32_t>>(b.getProperties().at("layers").get()) ==
+        std::vector<int32_t>{6});
+  CHECK(fmt::format("{} {}", b.m_cut, b.m_layers) == "0.5 [6]");
+}
+
+TEST_CASE("Copies of Properties hold their own value or refer to the same variable", "[property]") {
+  Bound b;
+  const auto own{b.m_own};
+  const auto ref{b.m_cut};
+  b.setProperty("own", 2);
+  b.setProperty("cut", 3.5);
+  CHECK(own == 1);
+  CHECK(ref == 3.5);
+}
+
+TEST_CASE("Defaults do not override explicitly set values", "[property]") {
+  Config c;
+  CHECK(c.getProperties().at("int").isDefault());
+
+  c.setDefaults({{"int", 10}, {"string", std::string{"default"}}});
+  CHECK(c.m_int == 10);
+  CHECK(c.m_string == "default");
+  CHECK(c.getProperties().at("int").isDefault());
+
+  c.setProperty("int", 11);
+  CHECK_FALSE(c.getProperties().at("int").isDefault());
+  c.setDefaults({{"int", 12}});
+  CHECK(c.m_int == 11);
+
+  // a default for a property without a value gives it a value
+  c.getProperties().at("double").parseDefault("0.25");
+  CHECK(c.hasProperty("double"));
+  CHECK(c.m_double == 0.25);
+  CHECK(c.getProperties().at("double").isDefault());
+}
+
+TEST_CASE("Several properties are set at once", "[property]") {
+  Config c;
+  c.setProperties({{"int", 5}, {"double", 2.5}, {"ints", std::vector<int64_t>{7}}});
+  CHECK(c.m_int == 5);
+  CHECK(c.m_double == 2.5);
+  CHECK(c.m_ints.value() == std::vector<int>{7});
+  CHECK_FALSE(c.getProperties().at("int").isDefault());
+
+  // unknown names are rejected before anything is set
+  CHECK_THROWS_WITH(c.setProperties({{"int", 6}, {"typo", 1}, {"other", 2}}),
+                    R"(Unknown properties: ["other", "typo"])");
+  CHECK(c.m_int == 5);
+}
