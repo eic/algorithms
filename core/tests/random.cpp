@@ -272,6 +272,29 @@ TEST_CASE("Generator used as bit generator reproduces the underlying engine", "[
   }
 }
 
+TEST_CASE("Generator Gaussians match a single held normal distribution", "[random]") {
+  const Generator gen{mtEngine(21), 16};
+  std::mt19937_64 ref{21};
+  std::normal_distribution<double> d_ref;
+  std::uniform_real_distribution<double> u_ref;
+  std::normal_distribution<float> f_ref;
+
+  for (int i = 0; i < 1000; ++i) {
+    // varying parameters do not discard the second value of a pair
+    const double mu    = i % 7;
+    const double sigma = 1 + i % 3;
+    REQUIRE(gen.gaussian(mu, sigma) == sigma * d_ref(ref) + mu);
+    // other draws in between take from the same engine sequence
+    if (i % 5 == 0) {
+      REQUIRE(gen.uniform_double() == u_ref(ref));
+    }
+    // each floating point type keeps its own state
+    if (i % 3 == 0) {
+      REQUIRE(gen.gaussian<float>() == f_ref(ref));
+    }
+  }
+}
+
 TEST_CASE("Generator draws binomially distributed numbers", "[random]") {
   const Generator gen{mtEngine(16), 16};
 

@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <tuple>
 
 #include <algorithms/detail/random.h>
 #include <algorithms/logger.h>
@@ -28,9 +29,8 @@ using RandomEngineCB = detail::CachedBitGenerator::GenFunc;
 //
 // Besides the convenience methods for common distributions, a Generator satisfies the
 // std::uniform_random_bit_generator concept, so it can be passed to any standard (or
-// third-party) distribution. Use this when a distribution object carries state between
-// draws that should be preserved, e.g. std::normal_distribution, which generates values
-// in pairs and returns the second value on the next call.
+// third-party) distribution, e.g. when an algorithm needs several independent distribution
+// objects that each carry their own state between draws.
 class Generator {
 public:
   using result_type = detail::CachedBitGenerator::result_type;
@@ -73,15 +73,23 @@ public:
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
+  // The normal distribution generates values in pairs. The Generator keeps one distribution
+  // per floating point type, so the second value of a pair is used by the next call (with
+  // the same Float type) instead of being discarded. Any mu and sigma can be used per call:
+  // the stored value is a standard normal deviate, scaled when it is returned. The sequence
+  // is identical to calling a single std::normal_distribution<Float> with this Generator.
   template <std::floating_point Float = double>
   Float gaussian(const Float mu = Float{0}, const Float sigma = Float{1}) const {
-    std::normal_distribution<Float> d{mu, sigma};
+    using Dist = std::normal_distribution<Float>;
     std::lock_guard<std::mutex> lock{m_mutex};
-    return d(m_gen);
+    return std::get<Dist>(m_normal)(m_gen, typename Dist::param_type{mu, sigma});
   }
 
 private:
   mutable detail::CachedBitGenerator m_gen;
+  mutable std::tuple<std::normal_distribution<float>, std::normal_distribution<double>,
+                     std::normal_distribution<long double>>
+      m_normal;
   mutable std::mutex m_mutex;
 };
 
