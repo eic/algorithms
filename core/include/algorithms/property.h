@@ -218,6 +218,24 @@ public:
   }
   const PropertyMap& getProperties() const { return m_props; }
 
+  // Values for several properties, by name
+  using PropertyValues = std::map<std::string, PropertyValue, std::less<>>;
+  // Set several properties; all names are checked before any property is set
+  void setProperties(const PropertyValues& values) {
+    checkNames(values);
+    for (const auto& [name, value] : values) {
+      m_props.at(name).set(value);
+    }
+  }
+  // Set the defaults of several properties (see PropertyBase::setDefault); all names are
+  // checked before any default is set
+  void setDefaults(const PropertyValues& values) {
+    checkNames(values);
+    for (const auto& [name, value] : values) {
+      m_props.at(name).setDefault(value);
+    }
+  }
+
   // A Configurable registers references to its own Property members, so copies would refer
   // to the properties of the original object
   Configurable()                               = default;
@@ -249,6 +267,17 @@ public:
   }
 
 private:
+  void checkNames(const PropertyValues& values) const {
+    std::vector<std::string_view> unknown;
+    for (const auto& [name, value] : values) {
+      if (m_props.count(name) == 0) {
+        unknown.push_back(name);
+      }
+    }
+    if (!unknown.empty()) {
+      throw PropertyError(fmt::format("Unknown properties: {}", unknown));
+    }
+  }
   void registerProperty(PropertyBase& prop) {
     if (m_props.count(prop.name())) {
       throw PropertyError(fmt::format("Duplicate property name: {}", prop.name()));
@@ -263,17 +292,27 @@ public:
   public:
     PropertyBase(std::string_view name, std::string_view description)
         : NameMixin{name, description} {}
+    virtual ~PropertyBase() = default;
+    // Set the value explicitly
     virtual void set(const PropertyValue& v) = 0;
     virtual PropertyValue get() const        = 0;
     // String representation of the value, and parsing of it, with the value type's own
     // conventions (e.g. enum names, shortest round-trip floating point); see
     // detail/property_string.h. parse() throws PropertyError if the string is invalid.
-    virtual std::string str() const             = 0;
-    virtual void parse(std::string_view text)   = 0;
+    virtual std::string str() const           = 0;
+    virtual void parse(std::string_view text) = 0;
+    // Set the default value, e.g. a per-instance default from a framework. This also sets
+    // the value, unless the value was already set explicitly with set() or parse(), so
+    // defaults and explicit settings can be applied in any order.
+    virtual void setDefault(const PropertyValue& v)  = 0;
+    virtual void parseDefault(std::string_view text) = 0;
     bool hasValue() const { return m_has_value; }
+    // Whether the value is (still) a default: true until set() or parse() is called
+    bool isDefault() const { return m_is_default; }
 
   protected:
-    bool m_has_value = false;
+    bool m_has_value  = false;
+    bool m_is_default = true;
   };
 
   // A property type that auto-registers itself with the property handler
@@ -302,59 +341,46 @@ public:
       m_has_value = true;
     }
 
-    Property()                = delete;
-    Property(const Property&) = default;
-    Property& operator=(const Property&) = default;
+    Property() = delete;
+    // A copy holds its own copy of the value, or refers to the same variable (PropertyRef)
+    Property(const Property& other)
+        : PropertyBase{other}
+        , m_value{other.m_value}
+        , m_ptr{other.m_ptr == &other.m_value ? &m_value : other.m_ptr} {}
+    Property& operator=(const Property&) = delete;
 
     // Only settable by explicitly calling the ::set() member function
     // as we want the Property to mostly act as if it is constant.
     // Accepts any PropertyValue that converts without loss to the value type (e.g. an
     // int32_t for a Property<std::size_t>, or an integer for a Property<double>).
-    virtual void set(const PropertyValue& v) {
-      const auto converted = detail::convert_lossless<impl_type>(v);
-      if (!converted) {
-        throw PropertyError(
-            fmt::format("Property '{}' cannot be set from a value of this type", name()));
-      }
-      value_type value{m_value};
-      if (const auto error = detail::from_property_impl<value_type>(*converted, value)) {
-        throw PropertyError(fmt::format("Property '{}': {}", name(), *error));
-      }
-      m_value     = std::move(value);
-      m_has_value = true;
-    }
+    virtual void set(const PropertyValue& v) { assign(converted(v), false); }
+    virtual void setDefault(const PropertyValue& v) { assign(converted(v), true); }
     // virtual getter for use from PropertyBase - use ::value() instead for direct member
     // access
-    virtual PropertyValue get() const { return detail::to_property_impl(m_value); }
+    virtual PropertyValue get() const { return detail::to_property_impl(value()); }
 
-    virtual std::string str() const { return detail::to_string(m_value); }
-    virtual void parse(std::string_view text) {
-      value_type value{m_value};
-      if (!detail::from_string(text, value)) {
-        throw PropertyError(fmt::format("Property '{}': cannot parse '{}'", name(), text));
-      }
-      m_value     = std::move(value);
-      m_has_value = true;
-    }
+    virtual std::string str() const { return detail::to_string(value()); }
+    virtual void parse(std::string_view text) { assign(parsed(text), false); }
+    virtual void parseDefault(std::string_view text) { assign(parsed(text), true); }
 
     // Direct access to the value. Use this one whenever possible (or go through the
     // automatic casting)
-    const value_type& value() const { return m_value; }
+    const value_type& value() const { return *m_ptr; }
 
     // automatically cast to T
-    operator T() const { return m_value; }
+    operator T() const { return value(); }
 
     // act as if this is a const T
-    template <typename U> bool operator==(const U& rhs) const { return m_value == rhs; }
-    template <typename U> bool operator!=(const U& rhs) const { return m_value != rhs; }
-    template <typename U> bool operator>(const U& rhs) const { return m_value > rhs; }
-    template <typename U> bool operator>=(const U& rhs) const { return m_value >= rhs; }
-    template <typename U> bool operator<(const U& rhs) const { return m_value < rhs; }
-    template <typename U> bool operator<=(const U& rhs) const { return m_value <= rhs; }
-    template <typename U> decltype(auto) operator+(const U& rhs) const { return m_value + rhs; }
-    template <typename U> decltype(auto) operator-(const U& rhs) const { return m_value - rhs; }
-    template <typename U> decltype(auto) operator*(const U& rhs) const { return m_value * rhs; }
-    template <typename U> decltype(auto) operator/(const U& rhs) const { return m_value / rhs; }
+    template <typename U> bool operator==(const U& rhs) const { return value() == rhs; }
+    template <typename U> bool operator!=(const U& rhs) const { return value() != rhs; }
+    template <typename U> bool operator>(const U& rhs) const { return value() > rhs; }
+    template <typename U> bool operator>=(const U& rhs) const { return value() >= rhs; }
+    template <typename U> bool operator<(const U& rhs) const { return value() < rhs; }
+    template <typename U> bool operator<=(const U& rhs) const { return value() <= rhs; }
+    template <typename U> decltype(auto) operator+(const U& rhs) const { return value() + rhs; }
+    template <typename U> decltype(auto) operator-(const U& rhs) const { return value() - rhs; }
+    template <typename U> decltype(auto) operator*(const U& rhs) const { return value() * rhs; }
+    template <typename U> decltype(auto) operator/(const U& rhs) const { return value() / rhs; }
 
     // stl collection helpers if needed
     // constrained so they only exist when the value type provides them, so generic code
@@ -400,12 +426,73 @@ public:
     template <class... Args>
       requires std::invocable<const T&, Args&&...>
     decltype(auto) operator()(Args&&... args) const {
-      return m_value(std::forward<Args>(args)...);
+      return value()(std::forward<Args>(args)...);
+    }
+
+  protected:
+    struct bind_tag {};
+    // Refer to an existing variable instead of the own value (see PropertyRef)
+    Property(Configurable* owner, std::string_view name, value_type& variable,
+             std::string_view description, bind_tag)
+        : Property(owner, name, description) {
+      m_ptr       = &variable;
+      m_has_value = true;
     }
 
   private:
+    value_type converted(const PropertyValue& v) const {
+      const auto impl = detail::convert_lossless<impl_type>(v);
+      if (!impl) {
+        throw PropertyError(
+            fmt::format("Property '{}' cannot be set from a value of this type", name()));
+      }
+      value_type result{value()};
+      if (const auto error = detail::from_property_impl<value_type>(*impl, result)) {
+        throw PropertyError(fmt::format("Property '{}': {}", name(), *error));
+      }
+      return result;
+    }
+    value_type parsed(std::string_view text) const {
+      value_type result{value()};
+      if (!detail::from_string(text, result)) {
+        throw PropertyError(fmt::format("Property '{}': cannot parse '{}'", name(), text));
+      }
+      return result;
+    }
+    void assign(value_type&& v, bool as_default) {
+      if (as_default) {
+        if (!m_is_default) {
+          return; // an explicitly set value takes precedence over a default
+        }
+      } else {
+        m_is_default = false;
+      }
+      *m_ptr      = std::move(v);
+      m_has_value = true;
+    }
+
     // value-initialized, so a Property without default has a well-defined value
     T m_value{};
+    T* m_ptr{&m_value};
+  };
+
+  // A Property that refers to an existing variable instead of holding its own value, e.g. a
+  // field of a configuration struct of the algorithm:
+  //
+  //   struct MyConfig { double cut = 1.0; };
+  //   class MyAlgo : public Algorithm<...> {
+  //     MyConfig m_cfg;
+  //     PropertyRef<double> m_cut{this, "cut", m_cfg.cut, "a cut"};
+  //   };
+  //
+  // The value of the variable is the default, and changes to the variable (e.g. assigning a
+  // whole configuration struct) are seen by the Property. The variable must outlive the
+  // PropertyRef, which is the case for members declared before the PropertyRef.
+  template <class T> class PropertyRef : public Property<T> {
+  public:
+    PropertyRef(Configurable* owner, std::string_view name, T& variable,
+                std::string_view description)
+        : Property<T>(owner, name, variable, description, typename Property<T>::bind_tag{}) {}
   };
 }; // namespace algorithms
 
@@ -440,4 +527,9 @@ struct fmt::formatter<algorithms::Configurable::Property<T>> : fmt::formatter<T>
 };
 template <class T, class Char>
 struct fmt::is_range<algorithms::Configurable::Property<T>, Char> : std::false_type {};
+template <class T>
+struct fmt::formatter<algorithms::Configurable::PropertyRef<T>>
+    : fmt::formatter<algorithms::Configurable::Property<T>> {};
+template <class T, class Char>
+struct fmt::is_range<algorithms::Configurable::PropertyRef<T>, Char> : std::false_type {};
 // others needed??? TODO
