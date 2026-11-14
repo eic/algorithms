@@ -16,6 +16,7 @@
 #include <random>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 using namespace algorithms;
@@ -27,9 +28,8 @@ using value_type = detail::CachedBitGenerator::result_type;
 
 // Engine that returns a running counter and records how often and with which size it is called
 struct CountingEngine {
-  std::shared_ptr<value_type> next = std::make_shared<value_type>(0);
-  std::shared_ptr<std::vector<std::size_t>> calls =
-      std::make_shared<std::vector<std::size_t>>();
+  std::shared_ptr<value_type> next                = std::make_shared<value_type>(0);
+  std::shared_ptr<std::vector<std::size_t>> calls = std::make_shared<std::vector<std::size_t>>();
 
   std::vector<value_type> operator()(std::size_t n) const {
     calls->push_back(n);
@@ -252,6 +252,115 @@ TEST_CASE("Generators do not repeat when their cache is refreshed", "[random]") 
         std::vector<double>(values.begin() + 4, values.end()));
 }
 
+TEST_CASE("Generator is a uniform random bit generator", "[random]") {
+  STATIC_REQUIRE(std::uniform_random_bit_generator<Generator>);
+  STATIC_REQUIRE(std::uniform_random_bit_generator<const Generator>);
+  STATIC_REQUIRE(Generator::min() == 0);
+  STATIC_REQUIRE(Generator::max() == std::numeric_limits<value_type>::max());
+}
+
+TEST_CASE("Generator used as bit generator reproduces the underlying engine", "[random]") {
+  const Generator gen{mtEngine(15), 16};
+  std::mt19937_64 ref{15};
+
+  // a distribution object that carries state between calls draws the same sequence
+  std::normal_distribution<double> d_gen;
+  std::normal_distribution<double> d_ref;
+  for (int i = 0; i < 100; ++i) {
+    REQUIRE(gen() == ref());
+    REQUIRE(d_gen(gen) == d_ref(ref));
+  }
+}
+
+TEST_CASE("Generator draws binomially distributed numbers", "[random]") {
+  const Generator gen{mtEngine(16), 16};
+
+  double sum_def    = 0;
+  double sum_custom = 0;
+  for (int i = 0; i < kDraws; ++i) {
+    const auto def = gen.binomial();
+    STATIC_REQUIRE(std::is_same_v<decltype(def), const int>);
+    REQUIRE((def == 0 || def == 1));
+    sum_def += def;
+
+    const auto custom = gen.binomial<int64_t>(20, 0.25);
+    STATIC_REQUIRE(std::is_same_v<decltype(custom), const int64_t>);
+    REQUIRE(custom >= 0);
+    REQUIRE(custom <= 20);
+    sum_custom += custom;
+  }
+  CHECK(sum_def / kDraws == Approx(0.5).margin(0.02));
+  CHECK(sum_custom / kDraws == Approx(5.).margin(0.1));
+}
+
+TEST_CASE("Seeded generators reproduce std::mt19937_64", "[random]") {
+  const auto gen = RandomSvc::instance().generator(17);
+  std::mt19937_64 ref{17};
+  // more draws than the default cache size, to cover cache refreshes
+  for (int i = 0; i < 3000; ++i) {
+    REQUIRE(gen() == ref());
+  }
+}
+
+TEST_CASE("Seeded generators are independent", "[random]") {
+  auto& svc        = RandomSvc::instance();
+  const auto gen1  = svc.generator(18);
+  const auto gen2  = svc.generator(18);
+  const auto other = svc.generator(19);
+  const auto def   = svc.generator();
+
+  std::vector<value_type> values1;
+  std::vector<value_type> values2;
+  std::vector<value_type> values_other;
+  for (int i = 0; i < 2000; ++i) {
+    values1.push_back(gen1());
+    // interleave draws from other generators, which must not affect the sequence
+    other();
+    def();
+  }
+  for (int i = 0; i < 2000; ++i) {
+    values2.push_back(gen2());
+  }
+  const auto gen3 = svc.generator(19);
+  for (int i = 0; i < 2000; ++i) {
+    values_other.push_back(gen3());
+  }
+  CHECK(values1 == values2);
+  CHECK(values1 != values_other);
+}
+
+TEST_CASE("Seeded generators are reproducible in multi-threaded execution", "[random]") {
+  constexpr std::size_t kThreads = 8;
+  constexpr int kPerThread       = 5000;
+  auto& svc                      = RandomSvc::instance();
+
+  auto draw = [&svc](std::size_t seed) {
+    const auto gen = svc.generator(seed);
+    std::vector<double> ret;
+    for (int i = 0; i < kPerThread; ++i) {
+      ret.push_back(gen.gaussian());
+    }
+    return ret;
+  };
+
+  std::vector<std::vector<double>> serial;
+  for (std::size_t t = 0; t < kThreads; ++t) {
+    serial.push_back(draw(100 + t));
+  }
+
+  std::vector<std::vector<double>> parallel(kThreads);
+  {
+    std::vector<std::thread> threads;
+    for (std::size_t t = 0; t < kThreads; ++t) {
+      threads.emplace_back([&, t] { parallel[t] = draw(100 + t); });
+    }
+    for (auto& th : threads) {
+      th.join();
+    }
+  }
+  CHECK(serial == parallel);
+}
+
 // The RandomSvc is a process-wide singleton, so its lifecycle is tested in a single test case
 TEST_CASE("RandomSvc provides generators", "[random]") {
   capture();
@@ -270,6 +379,9 @@ TEST_CASE("RandomSvc provides generators", "[random]") {
   // an external engine replaces the default engine
   svc.init(constantEngine(0));
   CHECK(svc.generator().uniform_double() == 0.);
+  // seeded generators use their own engine, not the external engine
+  std::mt19937_64 ref{20};
+  CHECK(svc.generator(20)() == ref());
   CHECK(messages() ==
         std::vector<Message>{{LogLevel::kInfo, "Loading external generator function."}});
 
