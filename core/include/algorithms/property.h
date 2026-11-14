@@ -10,7 +10,10 @@
 #include <concepts>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
+#include <type_traits>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -36,6 +39,48 @@ using PropertyValue = std::variant<bool, uint32_t, int32_t, uint64_t, int64_t, d
                                    std::vector<uint64_t>, std::vector<int64_t>, std::vector<double>,
                                    std::vector<std::string>>;
 
+namespace detail {
+  template <class T> struct is_std_vector : std::false_type {};
+  template <class T, class A> struct is_std_vector<std::vector<T, A>> : std::true_type {};
+
+  // Lossless conversion between PropertyValue alternatives: identical types, integers to
+  // integers within range, integers to floating point, and element-wise for vectors.
+  // bool only converts to and from bool. Returns std::nullopt if the conversion would
+  // change the type category or lose information.
+  template <class To, class From> std::optional<To> convert_lossless(const From& from) {
+    if constexpr (std::is_same_v<To, From>) {
+      return from;
+    } else if constexpr (std::is_same_v<To, bool> || std::is_same_v<From, bool>) {
+      return std::nullopt;
+    } else if constexpr (std::is_integral_v<To> && std::is_integral_v<From>) {
+      if (std::in_range<To>(from)) {
+        return static_cast<To>(from);
+      }
+      return std::nullopt;
+    } else if constexpr (std::is_floating_point_v<To> && std::is_arithmetic_v<From>) {
+      return static_cast<To>(from);
+    } else if constexpr (is_std_vector<To>::value && is_std_vector<From>::value) {
+      To to;
+      to.reserve(from.size());
+      for (const auto& element : from) {
+        const auto converted = convert_lossless<typename To::value_type>(
+            static_cast<typename From::value_type>(element));
+        if (!converted) {
+          return std::nullopt;
+        }
+        to.push_back(*converted);
+      }
+      return to;
+    } else {
+      return std::nullopt;
+    }
+  }
+
+  template <class To> std::optional<To> convert_lossless(const PropertyValue& value) {
+    return std::visit([](const auto& from) { return convert_lossless<To>(from); }, value);
+  }
+} // namespace detail
+
 // Configuration/property handling
 class Configurable {
 public:
@@ -45,10 +90,28 @@ public:
   template <typename T> void setProperty(std::string_view name, T&& value) {
     m_props.at(name).set(static_cast<detail::upcast_type_t<T>>(value));
   }
+  // Get a property value as type T, which can be any type the stored value converts to
+  // without loss (e.g. int32_t for a property of type int64_t that holds a small value)
   template <typename T> T getProperty(std::string_view name) const {
-    return std::get<T>(m_props.at(name).get());
+    const auto& prop = m_props.at(name);
+    const auto value = detail::convert_lossless<T>(prop.get());
+    if (!value) {
+      throw PropertyError(
+          fmt::format("Property '{}' cannot be retrieved as the requested type", name));
+    }
+    return *value;
   }
   const PropertyMap& getProperties() const { return m_props; }
+
+  // A Configurable registers references to its own Property members, so copies would refer
+  // to the properties of the original object
+  Configurable()                               = default;
+  Configurable(const Configurable&)            = delete;
+  Configurable& operator=(const Configurable&) = delete;
+  Configurable(Configurable&&)                 = delete;
+  Configurable& operator=(Configurable&&)      = delete;
+  virtual ~Configurable()                      = default;
+
   bool hasProperty(std::string_view name) const {
     return m_props.count(name) && m_props.at(name).hasValue();
   }
@@ -120,9 +183,23 @@ public:
     Property& operator=(const Property&) = default;
 
     // Only settable by explicitly calling the ::set() member function
-    // as we want the Property to mostly act as if it is constant
+    // as we want the Property to mostly act as if it is constant.
+    // Accepts any PropertyValue that converts without loss to the value type (e.g. an
+    // int32_t for a Property<std::size_t>, or an integer for a Property<double>).
     virtual void set(const PropertyValue& v) {
-      m_value     = static_cast<value_type>(std::get<impl_type>(v));
+      const auto converted = detail::convert_lossless<impl_type>(v);
+      if (!converted) {
+        throw PropertyError(
+            fmt::format("Property '{}' cannot be set from a value of this type", name()));
+      }
+      if constexpr (std::is_integral_v<value_type> && !std::is_same_v<value_type, bool> &&
+                    std::is_integral_v<impl_type>) {
+        if (!std::in_range<value_type>(*converted)) {
+          throw PropertyError(fmt::format("Property '{}': value {} out of range", name(),
+                                          *converted));
+        }
+      }
+      m_value     = static_cast<value_type>(*converted);
       m_has_value = true;
     }
     // virtual getter for use from PropertyBase - use ::value() instead for direct member
@@ -196,7 +273,8 @@ public:
     }
 
   private:
-    T m_value;
+    // value-initialized, so a Property without default has a well-defined value
+    T m_value{};
   };
 }; // namespace algorithms
 
