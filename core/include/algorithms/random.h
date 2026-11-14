@@ -75,14 +75,15 @@ public:
   }
   // The normal distribution generates values in pairs. The Generator keeps one distribution
   // per floating point type, so the second value of a pair is used by the next call (with
-  // the same Float type) instead of being discarded. Any mu and sigma can be used per call:
-  // the stored value is a standard normal deviate, scaled when it is returned. The sequence
-  // is identical to calling a single std::normal_distribution<Float> with this Generator.
+  // the same Float type) instead of being discarded. The stored distributions always keep
+  // their default (standard normal) parameters, and mu and sigma are applied here, so any
+  // mu and sigma can be used per call without relying on how a standard library caches
+  // values across parameter changes. The result is identical to sigma * d(gen) + mu for a
+  // single std::normal_distribution<Float> d used with this Generator.
   template <std::floating_point Float = double>
   Float gaussian(const Float mu = Float{0}, const Float sigma = Float{1}) const {
-    using Dist = std::normal_distribution<Float>;
     std::lock_guard<std::mutex> lock{m_mutex};
-    return std::get<Dist>(m_normal)(m_gen, typename Dist::param_type{mu, sigma});
+    return sigma * std::get<std::normal_distribution<Float>>(m_normal)(m_gen) + mu;
   }
 
 private:
