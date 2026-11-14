@@ -7,6 +7,7 @@
 //
 #pragma once
 
+#include <algorithm>
 #include <concepts>
 #include <cstdint>
 #include <map>
@@ -20,6 +21,7 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <algorithms/detail/property_string.h>
 #include <algorithms/detail/upcast.h>
 #include <algorithms/error.h>
 #include <algorithms/name.h>
@@ -79,6 +81,108 @@ namespace detail {
   template <class To> std::optional<To> convert_lossless(const PropertyValue& value) {
     return std::visit([](const auto& from) { return convert_lossless<To>(from); }, value);
   }
+
+  template <class T, class Variant> struct is_variant_alternative : std::false_type {};
+  template <class T, class... Ts>
+  struct is_variant_alternative<T, std::variant<Ts...>>
+      : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
+  template <class T>
+  constexpr bool is_property_alternative_v = is_variant_alternative<T, PropertyValue>::value;
+
+  // The PropertyValue alternative that represents a Property<T>:
+  //  - the upcast type of T, if that is an alternative (bool, integers, enums, floating
+  //    point, strings, and vectors of exactly these alternatives)
+  //  - for std::vector<U> and std::array<U, N>: std::vector of the upcast type of U, if that
+  //    is an alternative (e.g. std::vector<float> and std::array<double, 2> are represented
+  //    as std::vector<double>)
+  //  - otherwise, for types that can be converted to and from strings (see
+  //    property_string.h): std::string
+  //  - otherwise void, and Property<T> does not compile
+  template <class T> constexpr auto select_sequence_impl() {
+    if constexpr (PropertySequence<T>) {
+      using V = std::vector<upcast_type_t<typename T::value_type>>;
+      if constexpr (is_property_alternative_v<V>) {
+        return std::type_identity<V>{};
+      } else {
+        return std::type_identity<void>{};
+      }
+    } else {
+      return std::type_identity<void>{};
+    }
+  }
+  template <class T> constexpr auto select_property_impl() {
+    using U = upcast_type_t<T>;
+    using S = typename decltype(select_sequence_impl<T>())::type;
+    if constexpr (is_property_alternative_v<U>) {
+      return std::type_identity<U>{};
+    } else if constexpr (!std::is_void_v<S>) {
+      return std::type_identity<S>{};
+    } else if constexpr (StringConvertible<T>) {
+      return std::type_identity<std::string>{};
+    } else {
+      return std::type_identity<void>{};
+    }
+  }
+  template <class T> using property_impl_t = typename decltype(select_property_impl<T>())::type;
+
+  // Convert a value to its PropertyValue alternative
+  template <class T> property_impl_t<T> to_property_impl(const T& value) {
+    using Impl = property_impl_t<T>;
+    if constexpr (std::is_same_v<Impl, upcast_type_t<T>>) {
+      return static_cast<Impl>(value);
+    } else if constexpr (PropertySequence<T> && is_std_vector<Impl>::value) {
+      Impl impl;
+      impl.reserve(value.size());
+      for (const auto& element : value) {
+        impl.push_back(static_cast<typename Impl::value_type>(element));
+      }
+      return impl;
+    } else {
+      return to_string(value);
+    }
+  }
+
+  // Convert a PropertyValue alternative to the value type; returns an error message on
+  // failure (out of range, wrong number of elements, or unparsable string)
+  template <class T>
+  std::optional<std::string> from_property_impl(const property_impl_t<T>& impl, T& value) {
+    using Impl = property_impl_t<T>;
+    if constexpr (std::is_same_v<Impl, upcast_type_t<T>>) {
+      if constexpr (std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+        if (!std::in_range<T>(impl)) {
+          return fmt::format("value {} out of range", impl);
+        }
+      }
+      value = static_cast<T>(impl);
+    } else if constexpr (PropertySequence<T> && is_std_vector<Impl>::value) {
+      using Element = typename T::value_type;
+      if constexpr (is_std_array<T>::value) {
+        if (impl.size() != value.size()) {
+          return fmt::format("{} elements given, {} required", impl.size(), value.size());
+        }
+      }
+      std::vector<Element> elements;
+      elements.reserve(impl.size());
+      for (const auto& element : impl) {
+        if constexpr (std::is_integral_v<Element> && !std::is_same_v<Element, bool>) {
+          if (!std::in_range<Element>(element)) {
+            return fmt::format("element {} out of range", element);
+          }
+        }
+        elements.push_back(static_cast<Element>(element));
+      }
+      if constexpr (is_std_array<T>::value) {
+        std::copy(elements.begin(), elements.end(), value.begin());
+      } else {
+        value = T(elements.begin(), elements.end());
+      }
+    } else {
+      if (!from_string(impl, value)) {
+        return fmt::format("cannot parse '{}'", impl);
+      }
+    }
+    return std::nullopt;
+  }
 } // namespace detail
 
 // Configuration/property handling
@@ -88,8 +192,19 @@ public:
   using PropertyMap = std::map<std::string_view, PropertyBase&>;
 
   template <typename T> void setProperty(std::string_view name, T&& value) {
-    m_props.at(name).set(static_cast<detail::upcast_type_t<T>>(value));
+    using U = std::remove_cvref_t<T>;
+    if constexpr (detail::is_property_alternative_v<detail::upcast_type_t<U>>) {
+      m_props.at(name).set(static_cast<detail::upcast_type_t<U>>(value));
+    } else {
+      m_props.at(name).set(detail::to_property_impl<U>(value));
+    }
   }
+  // Set a property from its string representation (see detail/property_string.h)
+  void setPropertyString(std::string_view name, std::string_view value) {
+    m_props.at(name).parse(value);
+  }
+  // Get the string representation of a property (see detail/property_string.h)
+  std::string getPropertyString(std::string_view name) const { return m_props.at(name).str(); }
   // Get a property value as type T, which can be any type the stored value converts to
   // without loss (e.g. int32_t for a property of type int64_t that holds a small value)
   template <typename T> T getProperty(std::string_view name) const {
@@ -150,6 +265,11 @@ public:
         : NameMixin{name, description} {}
     virtual void set(const PropertyValue& v) = 0;
     virtual PropertyValue get() const        = 0;
+    // String representation of the value, and parsing of it, with the value type's own
+    // conventions (e.g. enum names, shortest round-trip floating point); see
+    // detail/property_string.h. parse() throws PropertyError if the string is invalid.
+    virtual std::string str() const             = 0;
+    virtual void parse(std::string_view text)   = 0;
     bool hasValue() const { return m_has_value; }
 
   protected:
@@ -161,7 +281,10 @@ public:
   template <class T> class Property : public PropertyBase {
   public:
     using value_type = T;
-    using impl_type  = detail::upcast_type_t<T>;
+    using impl_type  = detail::property_impl_t<T>;
+    static_assert(!std::is_void_v<impl_type>,
+                  "Property<T> requires T to be representable as a PropertyValue, a vector or "
+                  "array of such values, or convertible to and from std::string");
 
     Property(Configurable* owner, std::string_view name, std::string_view description)
         : PropertyBase{name, description} {
@@ -175,7 +298,8 @@ public:
     Property(Configurable* owner, std::string_view name, const value_type& v,
              std::string_view description)
         : Property(owner, name, description) {
-      set(static_cast<impl_type>(v));
+      m_value     = v;
+      m_has_value = true;
     }
 
     Property()                = delete;
@@ -192,19 +316,26 @@ public:
         throw PropertyError(
             fmt::format("Property '{}' cannot be set from a value of this type", name()));
       }
-      if constexpr (std::is_integral_v<value_type> && !std::is_same_v<value_type, bool> &&
-                    std::is_integral_v<impl_type>) {
-        if (!std::in_range<value_type>(*converted)) {
-          throw PropertyError(fmt::format("Property '{}': value {} out of range", name(),
-                                          *converted));
-        }
+      value_type value{m_value};
+      if (const auto error = detail::from_property_impl<value_type>(*converted, value)) {
+        throw PropertyError(fmt::format("Property '{}': {}", name(), *error));
       }
-      m_value     = static_cast<value_type>(*converted);
+      m_value     = std::move(value);
       m_has_value = true;
     }
     // virtual getter for use from PropertyBase - use ::value() instead for direct member
     // access
-    virtual PropertyValue get() const { return static_cast<impl_type>(m_value); }
+    virtual PropertyValue get() const { return detail::to_property_impl(m_value); }
+
+    virtual std::string str() const { return detail::to_string(m_value); }
+    virtual void parse(std::string_view text) {
+      value_type value{m_value};
+      if (!detail::from_string(text, value)) {
+        throw PropertyError(fmt::format("Property '{}': cannot parse '{}'", name(), text));
+      }
+      m_value     = std::move(value);
+      m_has_value = true;
+    }
 
     // Direct access to the value. Use this one whenever possible (or go through the
     // automatic casting)

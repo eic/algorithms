@@ -11,7 +11,9 @@
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
+#include <array>
 #include <cstdint>
+#include <istream>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -300,4 +302,143 @@ TEST_CASE("Properties can be set from lvalues", "[property]") {
 
   c.setProperty("string", chars);
   CHECK(c.m_string == "chars");
+}
+
+namespace {
+
+enum class Sigma { kAbs, kRel };
+std::ostream& operator<<(std::ostream& os, Sigma s) {
+  return os << (s == Sigma::kAbs ? "abs" : "rel");
+}
+std::istream& operator>>(std::istream& is, Sigma& s) {
+  std::string name;
+  is >> name;
+  if (name == "abs") {
+    s = Sigma::kAbs;
+  } else if (name == "rel") {
+    s = Sigma::kRel;
+  } else {
+    is.setstate(std::ios::failbit);
+  }
+  return is;
+}
+
+struct Range {
+  double min{0};
+  double max{0};
+  bool operator==(const Range&) const = default;
+};
+std::ostream& operator<<(std::ostream& os, const Range& r) { return os << r.min << ":" << r.max; }
+std::istream& operator>>(std::istream& is, Range& r) {
+  char colon{};
+  is >> r.min >> colon >> r.max;
+  if (colon != ':') {
+    is.setstate(std::ios::failbit);
+  }
+  return is;
+}
+
+class Extended : public PropertyMixin {
+public:
+  Property<uint8_t> m_byte{this, "byte", 1, ""};
+  Property<float> m_float{this, "float", 0.1f, ""};
+  Property<double> m_double{this, "double", 0.03, ""};
+  Property<Sigma> m_sigma{this, "sigma", Sigma::kAbs, "enum with stream operators"};
+  Property<Mode> m_mode{this, "mode", Mode::kSlow, "enum without stream operators"};
+  Property<std::vector<float>> m_floats{this, "floats", {0.5f, 1.5f}, ""};
+  Property<std::array<double, 2>> m_pair{this, "pair", {1., 2.}, ""};
+  Property<std::array<int, 2>> m_ipair{this, "ipair", {3, 4}, ""};
+  Property<Range> m_range{this, "range", Range{1., 2.}, "streamable struct"};
+};
+
+} // namespace
+
+TEST_CASE("Properties are represented as strings", "[property]") {
+  const Config c;
+  CHECK(c.getPropertyString("bool") == "true");
+  CHECK(c.getPropertyString("int") == "3");
+  CHECK(c.getPropertyString("float") == "1.5");
+  CHECK(c.getPropertyString("string") == "text");
+  CHECK(c.getPropertyString("ints") == "1,2,3");
+  CHECK(c.getPropertyString("strings") == "a,b");
+
+  const Extended e;
+  CHECK(e.getPropertyString("byte") == "1");
+  CHECK(e.getPropertyString("float") == "0.1");
+  CHECK(e.getPropertyString("double") == "0.03");
+  CHECK(e.getPropertyString("sigma") == "abs");
+  CHECK(e.getPropertyString("mode") == "1");
+  CHECK(e.getPropertyString("floats") == "0.5,1.5");
+  CHECK(e.getPropertyString("pair") == "1,2");
+  CHECK(e.getPropertyString("range") == "1:2");
+}
+
+TEST_CASE("Properties are parsed from strings", "[property]") {
+  Config c;
+  c.setPropertyString("bool", "false");
+  c.setPropertyString("int", " -4 ");
+  c.setPropertyString("double", "1e-3");
+  c.setPropertyString("string", " spaced ");
+  c.setPropertyString("ints", "4, 5");
+  c.setPropertyString("strings", "x, y");
+  CHECK(c.m_bool == false);
+  CHECK(c.m_int == -4);
+  CHECK(c.m_double == 1e-3);
+  CHECK(c.m_string == " spaced ");
+  CHECK(c.m_ints.value() == std::vector<int>{4, 5});
+  CHECK(c.m_strings.value() == std::vector<std::string>{"x", "y"});
+  c.setPropertyString("ints", "");
+  CHECK(c.m_ints.empty());
+
+  Extended e;
+  e.setPropertyString("byte", "2");
+  CHECK(e.m_byte == 2); // a number, not the character '2'
+  e.setPropertyString("sigma", "rel");
+  CHECK(e.m_sigma == Sigma::kRel);
+  e.setPropertyString("mode", "0");
+  CHECK(e.m_mode == Mode::kFast);
+  e.setPropertyString("pair", "5,6");
+  CHECK(e.m_pair.value() == std::array<double, 2>{5., 6.});
+  e.setPropertyString("range", "3:4");
+  CHECK(e.m_range.value() == Range{3., 4.});
+
+  CHECK_THROWS_WITH(c.setPropertyString("int", "1.5"), "Property 'int': cannot parse '1.5'");
+  CHECK_THROWS_AS(c.setPropertyString("int", "abc"), PropertyError);
+  CHECK_THROWS_AS(c.setPropertyString("bool", "yes"), PropertyError);
+  CHECK_THROWS_AS(e.setPropertyString("byte", "256"), PropertyError);
+  CHECK_THROWS_AS(e.setPropertyString("sigma", "relative"), PropertyError);
+  CHECK_THROWS_AS(e.setPropertyString("pair", "1"), PropertyError);
+  CHECK_THROWS_AS(e.setPropertyString("range", "3-4"), PropertyError);
+  // failed parsing leaves the value unchanged
+  CHECK(c.m_int == -4);
+  CHECK(e.m_pair.value() == std::array<double, 2>{5., 6.});
+}
+
+TEST_CASE("Properties of further types map onto PropertyValue alternatives", "[property]") {
+  STATIC_REQUIRE(std::is_same_v<Prop<std::vector<float>>::impl_type, std::vector<double>>);
+  STATIC_REQUIRE(std::is_same_v<Prop<std::array<double, 2>>::impl_type, std::vector<double>>);
+  STATIC_REQUIRE(std::is_same_v<Prop<std::array<int, 2>>::impl_type, std::vector<int64_t>>);
+  STATIC_REQUIRE(std::is_same_v<Prop<Range>::impl_type, std::string>);
+  // unchanged representations
+  STATIC_REQUIRE(std::is_same_v<Prop<std::vector<int>>::impl_type, std::vector<int32_t>>);
+  STATIC_REQUIRE(std::is_same_v<Prop<Sigma>::impl_type, int64_t>);
+
+  Extended e;
+  CHECK(std::get<std::vector<double>>(e.getProperties().at("pair").get()) ==
+        std::vector<double>{1., 2.});
+  CHECK(std::get<std::string>(e.getProperties().at("range").get()) == "1:2");
+
+  e.setProperty("pair", std::vector<double>{7., 8.});
+  CHECK(e.m_pair.value() == std::array<double, 2>{7., 8.});
+  e.setProperty("pair", std::array<double, 2>{9., 10.});
+  CHECK(e.m_pair.value() == std::array<double, 2>{9., 10.});
+  CHECK_THROWS_WITH(e.setProperty("pair", std::vector<double>{1., 2., 3.}),
+                    "Property 'pair': 3 elements given, 2 required");
+  e.setProperty("floats", std::vector<double>{2.5});
+  CHECK(e.m_floats.value() == std::vector<float>{2.5f});
+  e.setProperty("range", Range{5., 6.});
+  CHECK(e.m_range.value() == Range{5., 6.});
+  e.setProperty("range", std::string{"7:8"});
+  CHECK(e.m_range.value() == Range{7., 8.});
+  CHECK_THROWS_AS(e.setProperty("range", std::string{"bad"}), PropertyError);
 }
