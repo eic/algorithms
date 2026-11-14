@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <tuple>
 
 #include <algorithms/detail/random.h>
 #include <algorithms/logger.h>
@@ -25,16 +26,32 @@ using RandomEngineCB = detail::CachedBitGenerator::GenFunc;
 
 // thread-safe generator front-end. Requires that the underlying random engine used by
 // the RandomSvc is thread-safe.
+//
+// Besides the convenience methods for common distributions, a Generator satisfies the
+// std::uniform_random_bit_generator concept, so it can be passed to any standard (or
+// third-party) distribution, e.g. when an algorithm needs several independent distribution
+// objects that each carry their own state between draws.
 class Generator {
 public:
+  using result_type = detail::CachedBitGenerator::result_type;
+
   Generator(const RandomEngineCB& gen, const size_t cache_size) : m_gen{gen, cache_size} {}
 
-  template <std::integral Int = int> Int uniform_int(const Int min = Int{0}, const Int max = Int{1}) const {
+  static constexpr result_type min() { return detail::CachedBitGenerator::min(); }
+  static constexpr result_type max() { return detail::CachedBitGenerator::max(); }
+  result_type operator()() const {
+    std::lock_guard<std::mutex> lock{m_mutex};
+    return m_gen();
+  }
+
+  template <std::integral Int = int>
+  Int uniform_int(const Int min = Int{0}, const Int max = Int{1}) const {
     std::uniform_int_distribution<Int> d{min, max};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <std::floating_point Float = double> Float uniform_double(const Float min = Float{0}, const Float max = Float{1}) const {
+  template <std::floating_point Float = double>
+  Float uniform_double(const Float min = Float{0}, const Float max = Float{1}) const {
     std::uniform_real_distribution<Float> d{min, max};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
@@ -44,19 +61,36 @@ public:
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <std::floating_point Float = double> Float exponential(const Float lambda = Float{1}) const {
+  template <std::integral Int = int>
+  Int binomial(const Int trials = Int{1}, const double p = 0.5) const {
+    std::binomial_distribution<Int> d{trials, p};
+    std::lock_guard<std::mutex> lock{m_mutex};
+    return d(m_gen);
+  }
+  template <std::floating_point Float = double>
+  Float exponential(const Float lambda = Float{1}) const {
     std::exponential_distribution<Float> d{lambda};
     std::lock_guard<std::mutex> lock{m_mutex};
     return d(m_gen);
   }
-  template <std::floating_point Float = double> Float gaussian(const Float mu = Float{0}, const Float sigma = Float{1}) const {
-    std::normal_distribution<Float> d{mu, sigma};
+  // The normal distribution generates values in pairs. The Generator keeps one distribution
+  // per floating point type, so the second value of a pair is used by the next call (with
+  // the same Float type) instead of being discarded. The stored distributions always keep
+  // their default (standard normal) parameters, and mu and sigma are applied here, so any
+  // mu and sigma can be used per call without relying on how a standard library caches
+  // values across parameter changes. The result is identical to sigma * d(gen) + mu for a
+  // single std::normal_distribution<Float> d used with this Generator.
+  template <std::floating_point Float = double>
+  Float gaussian(const Float mu = Float{0}, const Float sigma = Float{1}) const {
     std::lock_guard<std::mutex> lock{m_mutex};
-    return d(m_gen);
+    return sigma * std::get<std::normal_distribution<Float>>(m_normal)(m_gen) + mu;
   }
 
 private:
   mutable detail::CachedBitGenerator m_gen;
+  mutable std::tuple<std::normal_distribution<float>, std::normal_distribution<double>,
+                     std::normal_distribution<long double>>
+      m_normal;
   mutable std::mutex m_mutex;
 };
 
@@ -68,7 +102,16 @@ class RandomSvc : public LoggedService<RandomSvc> {
 public:
   using value_type = detail::CachedBitGenerator::result_type;
 
+  // Generator linked to the shared service engine. The numbers drawn by a given Generator
+  // depend on the order in which all Generators request numbers from the shared engine, so
+  // they are not reproducible in multi-threaded execution.
   Generator generator() { return {m_gen, m_cache_size}; }
+  // Generator with its own private engine, seeded with the provided seed. The numbers
+  // drawn depend only on the seed, independent of any other Generator, which makes them
+  // reproducible regardless of the number of threads or the order of execution. Derive
+  // the seed from the event (and the algorithm) to obtain reproducible per-event sequences.
+  // The service seed and any external generator function are not used.
+  Generator generator(const size_t seed) const { return {createEngine(seed), m_cache_size}; }
 // FIXME fix the CMake setup so these are properly found in Gaudi
 #if 0 
   void init();
@@ -91,9 +134,9 @@ public:
 
 #if 0
 private:
-  RandomEngineCB createEngine(const size_t seed = 1);
+  static RandomEngineCB createEngine(const size_t seed = 1);
 #endif
-  RandomEngineCB createEngine(const size_t seed = 1) {
+  static RandomEngineCB createEngine(const size_t seed = 1) {
     // Each engine has its own state, shared by all copies of the callback
     struct Engine {
       std::mutex m;
