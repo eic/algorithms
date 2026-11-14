@@ -16,6 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -108,8 +109,72 @@ TEST_CASE("Properties reject unknown names and wrong types", "[property]") {
 
   CHECK_THROWS_AS(c.setProperty("unknown", 1), std::out_of_range);
   CHECK_THROWS_AS(c.getProperty<int64_t>("unknown"), std::out_of_range);
-  CHECK_THROWS_AS(c.setProperty("int", 1.5), std::bad_variant_access);
-  CHECK_THROWS_AS(c.getProperty<int32_t>("int"), std::bad_variant_access);
+  CHECK_THROWS_AS(c.setProperty("int", 1.5), PropertyError);
+  CHECK_THROWS_AS(c.setProperty("int", "text"), PropertyError);
+  CHECK_THROWS_AS(c.setProperty("bool", 1), PropertyError);
+  CHECK_THROWS_AS(c.setProperty("int", true), PropertyError);
+  CHECK_THROWS_AS(c.setProperty("ints", std::vector<double>{1.5}), PropertyError);
+  CHECK_THROWS_AS(c.getProperty<bool>("int"), PropertyError);
+  CHECK_THROWS_WITH(c.setProperty("int", 1.5),
+                    "Property 'int' cannot be set from a value of this type");
+}
+
+TEST_CASE("Properties convert values without loss", "[property]") {
+  Config c;
+
+  // integers of other sizes and signedness, within range
+  c.setProperty("uint", 7);
+  CHECK(c.m_uint == 7u);
+  c.setProperty("int", uint64_t{8});
+  CHECK(c.m_int == 8);
+  CHECK(c.getProperty<int32_t>("int") == 8);
+  CHECK(c.getProperty<uint32_t>("int") == 8u);
+
+  // integers to floating point
+  c.setProperty("double", 2);
+  CHECK(c.m_double == 2.0);
+  c.setProperty("float", 3);
+  CHECK(c.m_float == 3.0f);
+
+  // element-wise for vectors
+  c.setProperty("ints", std::vector<int64_t>{4, 5});
+  CHECK(c.m_ints.value() == std::vector<int>{4, 5});
+  CHECK(c.getProperty<std::vector<double>>("ints") == std::vector<double>{4., 5.});
+
+  // out of range for the upcast or the declared type
+  CHECK_THROWS_AS(c.setProperty("uint", -1), PropertyError);
+  CHECK_THROWS_AS(c.setProperty("ints", std::vector<int64_t>{int64_t{1} << 40}), PropertyError);
+  CHECK(c.getProperty<int32_t>("uint") == 7);
+  c.setProperty("int", -1);
+  CHECK_THROWS_AS(c.getProperty<uint32_t>("int"), PropertyError);
+}
+
+TEST_CASE("Properties check the range of their declared type", "[property]") {
+  class Narrow : public PropertyMixin {
+  public:
+    Property<uint8_t> m_byte{this, "byte", 1, ""};
+    Property<int16_t> m_short{this, "short", 1, ""};
+  } n;
+
+  n.setProperty("byte", 255);
+  CHECK(n.m_byte == 255);
+  CHECK_THROWS_WITH(n.setProperty("byte", 256), "Property 'byte': value 256 out of range");
+  CHECK_THROWS_AS(n.setProperty("short", -40000), PropertyError);
+  CHECK(n.m_byte == 255);
+}
+
+TEST_CASE("Properties without default are value-initialized", "[property]") {
+  const Config c;
+  CHECK_FALSE(c.m_double.hasValue());
+  CHECK(c.m_double.value() == 0.0);
+  CHECK(std::get<double>(c.getProperties().at("double").get()) == 0.0);
+}
+
+TEST_CASE("Configurables cannot be copied or moved", "[property]") {
+  STATIC_REQUIRE_FALSE(std::is_copy_constructible_v<Configurable>);
+  STATIC_REQUIRE_FALSE(std::is_copy_assignable_v<Configurable>);
+  STATIC_REQUIRE_FALSE(std::is_move_constructible_v<Configurable>);
+  STATIC_REQUIRE_FALSE(std::is_copy_constructible_v<Config>);
 }
 
 TEST_CASE("Properties require a unique name and a valid owner", "[property]") {
