@@ -83,7 +83,7 @@ jobs:
         echo "cache_dir=${{ github.workspace }}/.ccache" > ~/.ccache/ccache.conf
         echo "max_size=500MB" >> ~/.ccache/ccache.conf
         echo "compression=true" >> ~/.ccache/ccache.conf
-    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
+    - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8 # v5.7
     - name: Build, install and test
       uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
@@ -105,7 +105,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v7
-    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
+    - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8 # v5.7
     - name: Generate documentation
       uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
@@ -181,7 +181,7 @@ jobs:
         echo "cache_dir=${{ github.workspace }}/.ccache" > ~/.ccache/ccache.conf
         echo "max_size=500MB" >> ~/.ccache/ccache.conf
         echo "compression=true" >> ~/.ccache/ccache.conf
-    - uses: cvmfs-contrib/github-action-cvmfs@72f2a8d366043978d6aebee154bc9ed321c2f2a8 # v5.6
+    - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8 # v5.7
     - name: Build and test
       uses: eic/run-cvmfs-osg-eic-shell@e3977323ebfa7e0725f6b910fd2877db05c3bbb6 # main
       with:
